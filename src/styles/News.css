@@ -1,0 +1,19 @@
+.image-grid {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .image-grid img {
+    margin: 5px;
+    width: 100px;
+    height: auto;
+  }
+
+
+  .hidden {
+    display: none;
+  }
+
+  .td .videoClass {
+    display: none;
+  }

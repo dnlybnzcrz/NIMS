@@ -1,0 +1,144 @@
+/* Fullscreen background */
+body, html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: url('../logo/FM1_Booth1.jpg') no-repeat center center fixed;
+  background-size: cover;
+}
+
+/* Center the main login container */
+.main {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.4); /* Dark overlay */
+  padding: 0 15px; 
+}
+
+/* Login box */
+.sub-main {
+  background-color: rgba(255, 255, 255, 0.95);
+  border-radius: 10px;
+  padding: 30px 50px;
+  width: 380px;
+  max-width: 100%;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  font-family: 'Roboto', sans-serif;
+  text-align: center;
+}
+
+/* Profile image */
+.container-img {
+  margin-bottom: 20px; 
+  display: flex;
+  justify-content: center;
+}
+
+.profile {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #fff;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Form Heading */
+h1 {
+  color: #333;
+  margin-bottom: 25px; 
+  font-size: 26px;
+  font-weight: 500;
+}
+
+/* Input fields */
+input {
+  width: 100%;
+  padding: 14px 20px;
+  margin: 12px 0; 
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 16px;
+  box-sizing: border-box;
+  transition: all 0.3s ease;
+  font-family: 'Roboto', sans-serif;
+}
+
+input:focus {
+  border-color: #4e73df;
+  outline: none;
+  box-shadow: 0 0 8px rgba(78, 115, 223, 0.3);
+}
+
+/* Input icons */
+.user {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 20px;
+  height: 20px;
+  pointer-events: none;
+}
+
+/* Login button */
+.login-btn {
+  width: 100%;
+  padding: 14px;
+  background-color: #000000;
+  color: white;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  font-family: 'Roboto', sans-serif;
+  margin-top: 20px; 
+}
+
+.login-btn:hover {
+  background-color: #2e59d9;
+}
+
+.login-btn:disabled {
+  background-color: #ddd;
+  cursor: not-allowed;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .sub-main {
+    width: 85%;
+    padding: 30px;
+  }
+
+  .profile {
+    width: 80px;
+    height: 80px;
+  }
+
+  .login-btn {
+    font-size: 14px;
+    padding: 12px;
+    margin-top: 20px; 
+  }
+}
+
+@media (max-width: 576px) {
+  .sub-main {
+    width: 90%;
+    padding: 20px;
+  }
+
+  .profile {
+    width: 70px;
+    height: 70px;
+  }
+
+  .login-btn {
+    font-size: 14px;
+    padding: 10px;
+    margin-top: 20px; 
+  }
+}

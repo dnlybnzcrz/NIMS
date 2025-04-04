@@ -1,0 +1,206 @@
+/* Popup style */
+
+.navbar {
+  position: relative;
+  z-index: 500; /* Lower than the modal's z-index */
+}
+
+.popup-box {
+  position: fixed;
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+  width: 100%;
+  height: 100%;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center; /* Center the box vertically and horizontally */
+  z-index: 1000;
+}
+
+.box {
+  position: relative;
+  width: 42%; /* This will ensure the box has a reasonable width on desktops */
+  max-width: 800px; /* For desktop, keeps it centered */
+  height: 100%; /* Full-screen on mobile */
+  margin: 0 auto;
+  height: auto;
+  max-height: 100vh;
+  background: #fff;
+  border-radius: 4px;
+  padding: 20px;
+  border: 1px solid #999;
+  overflow: auto;
+}
+
+.close-icon {
+  cursor: pointer;
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  background: #ededed;
+  width: 30px; /* Slightly larger width for balance */
+  height: 30px; /* Match height to width */
+  border-radius: 50%;
+  display: flex; /* Enable flexbox for centering */
+  align-items: center; /* Center icon vertically */
+  justify-content: center; /* Center icon horizontally */
+  border: 1px solid #999;
+  font-size: 16px; /* Adjust font size for balance */
+  color: #333; /* Match icon color to design */
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.close-icon:hover {
+  background-color: #ccc; /* Change background on hover */
+  color: #000; /* Darken icon color on hover */
+}
+
+.btn2 {
+  background-color: #04aa6d;
+  color: white;
+  padding: 12px 10px;
+  margin: 8px 0;
+  border: none;
+  cursor: pointer;
+  width: 100%; /* Make the button take full width on mobile */
+  text-align: center;
+}
+
+.btn2:hover {
+  background-color: hsl(251, 100%, 50%);
+}
+
+.choosefile {
+  width: 100%; /* Make the file input take full width on mobile */
+}
+
+.table-responsive > p {
+  padding-top: 0.2rem;
+  padding-bottom: 0.2rem;
+}
+
+
+
+/* Responsive Styles for Tablets */
+@media only screen and (max-width: 1024px) {
+  .box {
+    width: 60%; /* Larger width for tablet-sized screens */
+  }
+}
+
+/* Responsive Styles for Mobile (smaller screens) */
+@media only screen and (max-width: 768px) {
+  .box {
+    width: 70%; /* Increase width for smaller tablets */
+    padding: 15px; /* Reduce padding */
+  }
+
+  .close-icon {
+    right: 10px; /* Adjust close icon position */
+    top: 10px;
+  }
+
+  .btn2 {
+    width: 100%; /* Full width button */
+    margin-left: 0;
+  }
+}
+
+@media only screen and (max-width: 576px) {
+  .box {
+    width: 90%; /* Further reduce the width for mobile */
+    padding: 15px;
+  }
+
+  .btn2 {
+    width: 100%; /* Full width button */
+    margin-left: 0;
+  }
+
+  .choosefile {
+    width: 100%; /* Full width file input */
+  }
+}
+
+
+.popup-box {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000; /* Ensure it sits on top of other content */
+}
+
+.backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5); /* Dim the background */
+  z-index: 999; /* Behind the modal */
+}
+
+.box {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  z-index: 1000; /* Ensure the modal content is on top */
+}
+
+.close-icon {
+  cursor: pointer;
+
+
+
+}
+
+
+body.modal-open .navbar {
+  filter: blur(4px); /* Add a blur effect to the navbar */
+  pointer-events: none; /* Disable interaction with the navbar */
+  transition: filter 0.3s ease; /* Smooth transition for the blur */
+}
+
+.modal {
+  z-index: 1050; /* Ensure it is above other elements, including the navbar */
+}
+
+.modal-backdrop {
+  z-index: 1040; /* Backdrop should be below the modal */
+}
+
+.modal-dialog-centered {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh; /* Center the modal vertically */
+}
+
+
+.modal-body {
+  max-height: calc(100vh - 150px); /* Adjust for modal header/footer */
+  overflow-y: auto;
+}
+
+
+@media (max-width: 768px) {
+  .box {
+    border-radius: 0; /* Remove rounded corners for mobile */
+  }
+
+  textarea,
+  input[type="file"] {
+    width: 100%;
+  }
+}
+
+
