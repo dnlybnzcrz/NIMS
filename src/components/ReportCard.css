@@ -1,0 +1,254 @@
+.post {
+  margin-bottom: 1.5rem;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  background-color: white;
+  border-radius: 0.25rem;
+  padding: 1rem;
+}
+
+.post-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.post-header strong {
+  font-size: 1.1rem;
+}
+
+.post-header div {
+  font-size: 0.85rem;
+  color: #123458;
+}
+
+.post-header div:last-child {
+  font-size: 0.75rem;
+  color: #d4c9be;
+}
+
+.post-content {
+  margin-bottom: 1rem;
+}
+
+.post-content h5 {
+  font-weight: 600;
+  color: #123458;
+}
+
+.post-content p {
+  margin-bottom: 0.5rem;
+}
+
+.post-content p strong {
+  color: #123458;
+}
+
+.post-content p span.expand-toggle {
+  color: #123458;
+  cursor: pointer;
+  margin-left: 5px;
+}
+
+.post-content p[style*="text-align: justify"] {
+  color: #030303;
+}
+
+.media-section {
+  margin-bottom: 1rem;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  overflow-x: auto;
+  flex-wrap: wrap;
+  max-width: 100%;
+  height: auto;
+}
+
+/* Added styles for media with 3 or fewer attachments */
+.media-section.single,
+.media-section.double,
+.media-section.triple {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  max-width: 100%;
+  height: auto;
+}
+
+.media-section.single .media-image {
+  width: 100%;
+  max-width: 600px;
+  height: 100%;
+}
+
+.media-section.single .media-video {
+  width: 100%;
+  height: 100%;
+}
+
+.media-section.double .media-image,
+.media-section.double .media-video {
+  width: 500px;
+  height: auto;
+}
+
+.media-section.triple .media-image,
+.media-section.triple .media-video {
+  width: 32%;
+  height: 300px;
+}
+
+.media-section.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 500px);
+  grid-template-rows: repeat(2, 400px);
+  gap: 10px;
+  overflow-x: hidden;
+  flex-wrap: nowrap;
+  justify-content: center;
+  max-width: 1220px;
+  height: 820px;
+}
+
+.media-image,
+.media-video {
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  object-fit: cover;
+  width: 100%;
+  height: 100%;
+  position: relative; /* Ensure relative positioning for play button centering */
+  overflow: hidden;
+}
+
+.media-image img,
+.media-video video {
+  width: 100%;
+  height: 100%;
+  border-radius: 10px;
+  object-fit: cover;
+  filter: brightness(70%);
+}
+
+.media-video {
+  max-width: 600px;
+  height: 400px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.media-video video {
+  object-fit: contain;
+}
+
+
+.media-overlay-count {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 2.5rem;
+  font-weight: bold;
+  user-select: none;
+  pointer-events: none;
+}
+
+.audio-section {
+  margin-bottom: 1rem;
+}
+
+.audio-section h6 {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.audio-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.audio-list audio {
+  width: 100%;
+  max-width: 400px;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+}
+
+.post-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 1rem;
+}
+
+mark {
+  background-color: #ffff00;
+  padding: 0;
+}
+
+@media (max-width: 600px) {
+  .post {
+    padding: 0.75rem;
+  }
+
+  .post-header strong.author-name {
+    font-size: 1rem;
+  }
+
+  .post-header div.author-station,
+  .post-header div.date-created {
+    font-size: 0.7rem;
+  }
+
+  .post-content h5.post-title {
+    font-size: 1.1rem;
+  }
+
+  .post-content p {
+    font-size: 0.9rem;
+  }
+
+  .media-section,
+  .media-section.single,
+  .media-section.double,
+  .media-section.triple,
+  .media-section.grid {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 8px;
+    max-width: 100%;
+    height: auto;
+    justify-content: flex-start;
+  }
+
+  .media-image,
+  .media-video {
+    width: 80vw;
+    max-width: 300px;
+    height: auto;
+    border-radius: 8px;
+  }
+
+  .media-image img,
+  .media-video video {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    filter: brightness(70%);
+  }
+
+  .post-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .post-actions button {
+    width: 100%;
+  }
+}

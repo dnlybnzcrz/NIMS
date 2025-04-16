@@ -2,13 +2,14 @@ import React, { useEffect, useState } from "react";
 import Navbar from "./Navbar";
 import axios from "axios";
 import moment from "moment";
-import { Button } from "react-bootstrap";
 import StoryModal from "./StoryModal"; // Import StoryModal component
 import ReactPaginate from "react-paginate"; // Import React Paginate
 import MediaModal from "./MediaModal"; // Import MediaModal component
 import pbsheader from "../logo/pbsheader.png";
 import "../styles/Pagination.css";
 import "../styles/Homepage.css";
+import ReportCard from "./ReportCard"; // Import ReportCard component
+import { Button } from "react-bootstrap";
 
 const Homepage = () => {
   const [approvedReports, setApprovedReports] = useState([]);
@@ -20,7 +21,7 @@ const Homepage = () => {
   const [mediaUrls, setMediaUrls] = useState([]); // Array of media URLs to preview
   const [mediaType, setMediaType] = useState(null); // Type of media: image, audio, video
   const [mediaInitialIndex, setMediaInitialIndex] = useState(0); // Initial index for media modal
-  const [expandedReports, setExpandedReports] = useState({}); // Track expanded state of reports by id
+  const [loading, setLoading] = useState(false); // Loading state for data fetch
   const rowsPerPage = 20; // Number of rows per page
 
   // Check if the user is logged in and get the token
@@ -43,14 +44,17 @@ const Homepage = () => {
   }, [token]); // Fetch reports when token is available
 
   const fetchApprovedReports = () => {
+    setLoading(true);
     axios
       .get("https://api.radiopilipinas.online/nims/view", config)
       .then((res) => {
         const filteredApprovedReports = res.data.newsDataList.filter(report => report.approved === true);
         setApprovedReports(filteredApprovedReports);
+        setLoading(false);
       })
       .catch((err) => {
         console.log(err);
+        setLoading(false);
       });
   };
 
@@ -129,7 +133,7 @@ const Homepage = () => {
 
   return (
     <div>
-      <div style={{ backgroundColor: "white", padding: "10px 0", textAlign: "center" }}>
+      <div style={{ backgroundColor: "#F1EFEC", padding: "10px 0", textAlign: "center" }}>
         <img src={pbsheader} alt="PBS Header" style={{ maxWidth: "100%", height: "auto" }} />
       </div>
       <Navbar />
@@ -138,6 +142,7 @@ const Homepage = () => {
         <div className="social-feed">
           <h3 className="text-center mb-4">Approved Reports Feed</h3>
 
+
           {/* Search input */}
           <input
             type="text"
@@ -145,188 +150,31 @@ const Homepage = () => {
             placeholder="Search by source, headline, lead, tags, or date/time"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            aria-label="Search reports"
+            role="search"
           />
 
-          {paginatedReports.length ? (
+          {loading ? (
+            <div className="text-center my-4">
+              <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Loading...</span>
+              </div>
+            </div>
+          ) : paginatedReports.length ? (
             <div className="feed">
-              {paginatedReports.map((report) => (
-                <div key={report._id} className="post card mb-4 shadow-sm">
-                  <div className="post-header d-flex align-items-center mb-3">
-                    <div>
-                      <strong style={{ fontSize: "1.1rem" }}>{report.author.name.first} {report.author.name.last}</strong>
-                      <div style={{ fontSize: "0.85rem", color: "#555" }}>{report.author.station}</div>
-                      <div style={{ fontSize: "0.75rem", color: "#888" }}>{moment(report.dateCreated).fromNow()}</div>
-                    </div>
-                  </div>
-                  <div className="post-content mb-3">
-                    <h5 style={{ fontWeight: "600" }}>{report.title}</h5>
-                    <p>
-                      {expandedReports[report._id]
-                        ? report.lead || ""
-                        : (typeof report.lead === "string" ? report.lead.split(" ").slice(0, 30).join(" ") : "") + ((typeof report.lead === "string" && report.lead.split(" ").length > 30) ? "..." : "")}
-                      {(typeof report.lead === "string" && report.lead.split(" ").length > 30) && (
-                        <span
-                          onClick={() => {
-                            setExpandedReports((prev) => ({
-                              ...prev,
-                              [report._id]: !prev[report._id],
-                            }));
-                          }}
-                          style={{ color: "blue", cursor: "pointer", marginLeft: "5px" }}
-                        >
-                          {expandedReports[report._id] ? " see less" : " see more"}
-                        </span>
-                      )}
-                    </p>
-                    <p style={{ textAlign: "justify" }}>
-                      <strong>Story: </strong>
-                      {expandedReports[report._id + "_body"]
-                        ? report.body || ""
-                        : (typeof report.body === "string" ? report.body.split(" ").slice(0, 50).join(" ") : "") + ((typeof report.body === "string" && report.body.split(" ").length > 50) ? "..." : "")}
-                      {(typeof report.body === "string" && report.body.split(" ").length > 50) && (
-                        <span
-                          onClick={() => {
-                            setExpandedReports((prev) => ({
-                              ...prev,
-                              [report._id + "_body"]: !prev[report._id + "_body"],
-                            }));
-                          }}
-                          style={{ color: "blue", cursor: "pointer", marginLeft: "5px" }}
-                        >
-                          {expandedReports[report._id + "_body"] ? " see less" : " see more"}
-                        </span>
-                      )}
-                    </p>
-                    <p><strong>Tags: </strong>{report.tags.join(', ')}</p>
-                    <p><strong>Remarks: </strong>{report.remarks}</p>
-                  </div>
-
-                  {/* Media Section */}
-                  {/* Combined Media Section */}
-                  {(() => {
-                    const combinedMedia = [];
-
-                    // Add main image if exists
-                    if (report.image || report.imageUrl) {
-                      combinedMedia.push({
-                        type: "image",
-                        url: report.image || report.imageUrl,
-                      });
-                    }
-
-                    // Add images
-                    if (report.files && report.files.images && report.files.images.length > 0) {
-                      report.files.images.forEach((img) => {
-                        combinedMedia.push({
-                          type: "image",
-                          url: `https://pbs-nims.s3.ap-southeast-1.amazonaws.com${img}`,
-                        });
-                      });
-                    }
-
-                    // Add videos
-                    if (report.files && report.files.videos && report.files.videos.length > 0) {
-                      report.files.videos.forEach((video) => {
-                        combinedMedia.push({
-                          type: "video",
-                          url: `https://pbs-nims.s3.ap-southeast-1.amazonaws.com${video}`,
-                        });
-                      });
-                    }
-
-                    if (combinedMedia.length === 0) return null;
-
-                    return (
-                      <div className="media-section mb-3" style={{ display: "flex", gap: "15px", overflowX: "auto", flexWrap: "wrap", justifyContent: "center" }}>
-                        {combinedMedia.map((media, idx) => {
-                          if (media.type === "image") {
-                            return (
-                              <img
-                                key={idx}
-                                src={media.url}
-                                alt={`media-${idx}`}
-                                style={{ height: "300px", borderRadius: "10px", cursor: "pointer", flexShrink: 0, objectFit: "cover" }}
-                                draggable="true"
-                                onDragStart={(e) => {
-                                  e.dataTransfer.setData('DownloadURL', `image/jpeg:${media.url}`);
-                                }}
-                                onClick={() => handleShowMediaModal(combinedMedia, null, idx)}
-                              />
-                            );
-                          } else if (media.type === "video") {
-                            return (
-                              <video
-                                key={idx}
-                                controls
-                              style={{
-                                height: "300px",
-                                maxWidth: "400px",
-                                objectFit: "cover",
-                                borderRadius: "10px",
-                                boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
-                                cursor: "pointer",
-                                flexShrink: 0,
-                              }}
-                                draggable="true"
-                                onDragStart={(e) => {
-                                  e.dataTransfer.setData('DownloadURL', `video/mp4:${media.url}`);
-                                }}
-                                onClick={() => handleShowMediaModal(combinedMedia, null, idx)}
-                              >
-                                <source src={media.url} type="video/mp4" />
-                                Your browser does not support the video element.
-                              </video>
-                            );
-                          } else {
-                            return null;
-                          }
-                        })}
-                      </div>
-                    );
-                  })()}
-+
-                  {/* Separate Audio Section */}
-                  {report.files && report.files.audios && report.files.audios.length > 0 && (
-                    <div className="media-section mb-3">
-                      <h6 style={{ fontWeight: "600", marginBottom: "0.5rem" }}>Audio:</h6>
-                      <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                        {report.files.audios.map((audio, index) => {
-                          const audioUrl = `https://pbs-nims.s3.ap-southeast-1.amazonaws.com${audio}`;
-                          return (
-                            <audio
-                              key={index}
-                              controls
-                              style={{
-                                width: "100%",
-                                maxWidth: "400px",
-                                borderRadius: "8px",
-                                boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
-                                cursor: "pointer",
-                              }}
-                              draggable="true"
-                              onDragStart={(e) => {
-                                e.dataTransfer.setData('DownloadURL', `audio/mpeg:${audioUrl}`);
-                              }}
-                              onClick={() => handleShowMediaModal(report.files.audios.map(a => ({ type: "audio", url: `https://pbs-nims.s3.ap-southeast-1.amazonaws.com${a}` })), "audio", index)}
-                            >
-                              <source src={audioUrl} type="audio/mpeg" />
-                              Your browser does not support the audio tag.
-                            </audio>
-                          );
-                        })}
-                      </div>
-                    </div>
+              {paginatedReports.map((report, index) => (
+                <React.Fragment key={report._id}>
+                  <ReportCard
+                    report={report}
+                    handleShowModal={handleShowModal}
+                    handleDeleteReport={handleDeleteReport}
+                    handleShowMediaModal={handleShowMediaModal}
+                    searchQuery={searchQuery}
+                  />
+                  {index !== paginatedReports.length - 1 && (
+                    <hr style={{ borderTop: "3px solid #555", margin: "20px 0" }} />
                   )}
-
-                  <div className="post-actions d-flex justify-content-between mt-3">
-                    <Button variant="outline-primary" size="sm" onClick={() => handleShowModal(report)}>
-                      Read Full Story
-                    </Button>
-                    <Button variant="outline-danger" size="sm" onClick={() => handleDeleteReport(report._id)}>
-                      Delete
-                    </Button>
-                  </div>
-                </div>
+                </React.Fragment>
               ))}
             </div>
           ) : (
@@ -334,8 +182,8 @@ const Homepage = () => {
           )}
 
           <ReactPaginate
-            previousLabel={<span>&laquo; Previous</span>}
-            nextLabel={<span>Next &raquo;</span>}
+            previousLabel={<span aria-label="Previous page">&laquo; Previous</span>}
+            nextLabel={<span aria-label="Next page">Next &raquo;</span>}
             pageCount={Math.ceil(filterReports().length / rowsPerPage)}
             onPageChange={handlePageClick}
             containerClassName={"pagination"}
@@ -347,6 +195,8 @@ const Homepage = () => {
             nextLinkClassName={"page-link"}
             activeClassName={"active"}
             disabledClassName={"disabled"}
+            ariaLabelBuilder={(page) => `Go to page ${page}`}
+            role="navigation"
           />
         </div>
       </div>

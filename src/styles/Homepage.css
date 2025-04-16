@@ -3,26 +3,28 @@ body, html, #root {
   height: 100%;
   margin: 0;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: linear-gradient(135deg, #0025CE 0%, #00EAFF 33%, #4D3589 66%, #303E57 100%);
+  background: linear-gradient(135deg, #123458 0%, #D4C9BE 33%, #123458 66%, #030303 100%);
   background-repeat: no-repeat;
   background-attachment: fixed;
-  color: #333;
+  color: #030303;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 /* Container for the feed */
 .container.my-2 {
-  background-color: #f9f9f9;
+  background-color: #F1EFEC;
   border-radius: 15px;
   padding: 20px;
-  max-width: 1200px;
+  max-width: 1200px; 
   margin: 2rem auto;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  box-shadow: 0 8px 24px rgba(3,3,3,0.12);
 }
 
 /* Feed header */
 .social-feed h3 {
   font-weight: 700;
-  color: #4a4a4a;
+  color: #123458;
   margin-bottom: 1.5rem;
   text-align: center;
 }
@@ -32,7 +34,7 @@ body, html, #root {
   border-radius: 30px !important;
   padding: 12px 25px !important;
   font-size: 1.1rem !important;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(3,3,3,0.1);
   border: none !important;
   transition: box-shadow 0.3s ease;
   max-width: 600px;
@@ -42,56 +44,55 @@ body, html, #root {
 
 .social-feed input.form-control:focus {
   outline: none;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.6);
+  box-shadow: 0 4px 12px rgba(18, 52, 88, 0.6);
 }
 
 /* Post card */
 .post.card {
-  background-color: #fff;
+  background-color: #F1EFEC;
   border: none !important;
   border-radius: 15px !important;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px rgba(3,3,3,0.1);
   transition: box-shadow 0.3s ease, transform 0.3s ease;
-  cursor: pointer;
   padding: 20px !important;
 }
 
 .post.card:hover {
-  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 8px 24px rgba(18, 52, 88, 0.4);
   transform: translateY(-5px);
 }
 
 /* Post header */
 .post-header strong {
-  color: #2c3e50;
+  color: #030303;
   font-size: 1.2rem;
 }
 
 .post-header div {
-  color: #7f8c8d;
+  color: #D4C9BE;
 }
 
 /* Post content */
 .post-content h5 {
-  color: #34495e;
+  color: #123458;
   font-weight: 700;
   margin-bottom: 0.5rem;
 }
 
 .post-content p {
-  color: #555;
+  color: #030303;
   line-height: 1.4;
 }
 
 /* Tags and remarks */
 .post-content p strong {
-  color: #2980b9;
+  color: #123458;
 }
 
 /* Media section images */
 .media-section img {
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(3,3,3,0.1);
   transition: transform 0.3s ease;
 }
 
@@ -102,7 +103,7 @@ body, html, #root {
 /* Media section videos */
 .media-section video {
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(3,3,3,0.1);
   transition: transform 0.3s ease;
 }
 
@@ -118,9 +119,9 @@ body, html, #root {
 }
 
 .post-actions button:hover {
-  background-color: #4a69bd !important;
-  color: white !important;
-  border-color: #4a69bd !important;
+  background-color: #123458 !important;
+  color: #F1EFEC !important;
+  border-color: #123458 !important;
 }
 
 /* Pagination overrides */
@@ -137,7 +138,7 @@ body, html, #root {
 }
 
 .page-link {
-  color: #4a69bd;
+  color: #123458;
   border-radius: 50% !important;
   width: 36px;
   height: 36px;
@@ -151,19 +152,19 @@ body, html, #root {
 }
 
 .page-link:hover {
-  background-color: #4a69bd;
-  color: white;
-  border-color: #4a69bd;
+  background-color: #123458;
+  color: #F1EFEC;
+  border-color: #123458;
 }
 
 .page-item.active .page-link {
-  background-color: #4a69bd;
-  color: white;
-  border-color: #4a69bd;
+  background-color: #123458;
+  color: #F1EFEC;
+  border-color: #123458;
 }
 
 .page-item.disabled .page-link {
-  color: #ccc;
+  color: #D4C9BE;
   cursor: not-allowed;
   border-color: transparent;
 }
@@ -173,49 +174,70 @@ body, html, #root {
   /* Container full width with padding */
   .container.my-2 {
     max-width: 100%;
-    margin: 1rem;
-    padding: 15px;
+    margin: 0;
+    padding: 5px;
+    text-align: center;
+    overflow-x: hidden;
+  }
+
+  /* Remove gradient background on mobile */
+  body, html, #root {
+    background: none;
+    background-color: #F1EFEC;
+  }
+
+  /* Center align social feed */
+  .social-feed {
+    text-align: center;
   }
 
   /* Search input full width */
   .social-feed input.form-control {
     max-width: 100%;
-    font-size: 1rem !important;
-    padding: 10px 20px !important;
+    font-size: 0.95rem !important;
+    padding: 8px 15px !important;
+    margin-left: auto;
+    margin-right: auto;
   }
 
   /* Post card padding, font size, and smaller width */
   .post.card {
-    padding: 15px !important;
-    max-width: 350px;
+    padding: 10px !important;
+    max-width: 100%;
     margin: 0 auto 1rem auto;
+    text-align: left;
   }
 
   .post-header strong {
-    font-size: 1rem;
+    font-size: 0.95rem;
   }
 
   .post-header div {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
+  }
+
+  .post-content {
+    text-align: left;
   }
 
   .post-content h5 {
-    font-size: 1.1rem;
+    font-size: 1rem;
   }
 
   .post-content p {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
   }
 
   /* Media section images and videos smaller and stacked */
   .media-section {
     justify-content: center;
-    gap: 10px;
+    gap: 8px;
+    align-items: center;
   }
 
   .media-section img,
   .media-section video {
-    height: 200px;
+    height: auto;
     max-width: 100%;
     flex-shrink: 0;
   }
@@ -229,22 +251,23 @@ body, html, #root {
   /* Buttons full width and margin */
   .post-actions {
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
+    align-items: center;
   }
 
   .post-actions button {
     width: 100%;
-    font-size: 1rem;
+    font-size: 0.95rem;
   }
 
   /* Pagination smaller and spaced */
   .pagination {
-    padding: 0.5rem 0;
+    padding: 0.3rem 0;
   }
 
   .page-link {
-    width: 30px;
-    height: 30px;
-    line-height: 28px;
+    width: 28px;
+    height: 28px;
+    line-height: 26px;
   }
 }

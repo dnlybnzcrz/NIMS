@@ -1,12 +1,10 @@
-/* Navbar.css - professional styles for the navigation bar */
-
 .navbar-custom {
-  background-color: #003366; /* Dark blue background */
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background-color: #123458; /* Dark blue background replaced */
+  box-shadow: 0 2px 4px rgba(3, 3, 3, 0.1);
 }
 
 .navbar-custom .navbar-brand {
-  color: #ffffff;
+  color: #F1EFEC;
   font-weight: 700;
   font-size: 1.5rem;
   letter-spacing: 1px;
@@ -14,12 +12,12 @@
 
 .navbar-custom .navbar-brand:hover,
 .navbar-custom .navbar-brand:focus {
-  color: #ffcc00; /* Accent gold color on hover */
+  color: #D4C9BE; /* Accent color on hover replaced */
   text-decoration: none;
 }
 
 .navbar-custom .nav-link {
-  color: #ffffff;
+  color: #F1EFEC;
   font-weight: 500;
   padding: 0.5rem 1rem;
   transition: color 0.3s ease;
@@ -27,17 +25,17 @@
 
 .navbar-custom .nav-link:hover,
 .navbar-custom .nav-link:focus {
-  color: #ffffff;
-  background-color: #0047b3; /* Updated to match background palette */
+  color: #D4C9BE;
+  background-color: transparent;
   border-radius: 4px;
   text-decoration: none;
 }
 
 .navbar-custom .nav-link.active {
-  color: #ffffff;
+  color: #F1EFEC;
   font-weight: 700;
   text-decoration: none;
-  background-color: #0047b3; /* Updated to match background palette */
+  background-color: #030303; /* Updated to match background palette */
   border-radius: 4px;
   padding: 0.5rem 1rem;
 }
@@ -45,14 +43,14 @@
 .navbar-custom .custom-toggle {
   border: none;
   background-color: transparent;
-  color: #ffffff;
+  color: #F1EFEC;
   font-size: 1.25rem;
   outline: none;
 }
 
 .navbar-custom .custom-toggle:focus,
 .navbar-custom .custom-toggle:hover {
-  color: #ffcc00;
+  color: #D4C9BE;
   box-shadow: none;
 }
 
@@ -60,30 +58,34 @@
 @media (max-width: 991.98px) {
   .navbar-custom .nav-link {
     padding: 0.75rem 1rem;
+    font-size: 1rem;
+    text-align: center;
   }
   .navbar-custom .custom-toggle {
-    font-size: 1.5rem;
-    color: #ffffff;
+    font-size: 1.75rem;
+    color: #F1EFEC;
     border: none;
-    padding: 0.25rem 0.5rem;
+    padding: 0.5rem 1rem;
   }
   .navbar-custom .custom-toggle:focus,
   .navbar-custom .custom-toggle:hover {
-    color: #ffcc00;
+    color: #D4C9BE;
     background-color: transparent;
     box-shadow: none;
   }
   .navbar-custom .navbar-collapse {
-    background-color: #003366;
-    padding: 1rem;
+    background-color: #123458;
+    padding: 1.5rem 1rem;
     border-radius: 0 0 8px 8px;
   }
   .navbar-custom .nav {
     flex-direction: column;
+    align-items: center;
   }
   .navbar-custom .nav-link {
     padding: 0.75rem 1rem;
-    border-bottom: 1px solid #0047b3;
+    border-bottom: 1px solid #030303;
+    width: 100%;
   }
   .navbar-custom .nav-link:last-child {
     border-bottom: none;
