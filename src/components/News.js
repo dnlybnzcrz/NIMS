@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import "../styles/hp.css";
 import Navbar from "./Navbar";
 import axios from "axios";
 import AddReportModal from "./AddReportModal";
@@ -22,9 +21,10 @@ const News = () => {
     const [currentPage, setCurrentPage] = useState(0);
     const itemsPerPage = 20; // Set items per page
 
+    const userData = JSON.parse(localStorage.getItem("user")) || JSON.parse(sessionStorage.getItem("user"));
     const config = {
         headers: {
-            Authorization: "Bearer " + JSON.parse(localStorage.getItem("user")).token,
+            Authorization: "Bearer " + (userData ? userData.token : ""),
         },
     };
 
@@ -199,6 +199,7 @@ const News = () => {
                                                     View Media ({(value.files.audios.length || 0) +
                                                     (value.files.images.length || 0) +
                                                     (value.files.videos.length || 0)})
+
                                                 </button>
                                             ) : (
                                                 <p className="text-sm text-gray-500">N/A</p>

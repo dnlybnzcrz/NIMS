@@ -10,8 +10,10 @@ import Sequence from "./components/Sequence";
 import MajorNews from "./components/MajorNews";
 import NewsBreak from "./components/NewsBreak";
 import Profile from "./components/Profile";
+import ApprovedReports from "./components/ApprovedReports";
 import ReactLoading from "react-loading";
 import "./App.css";
+import { AuthProvider } from "./context/AuthContext";
 
 function App() {
   const [loading, setLoading] = useState(false);
@@ -31,29 +33,31 @@ function App() {
 
   return (
     <div className="App">
-      <BrowserRouter>
-        {loading ? (
-          <div className="loading-overlay">
-            <div className="text-center">
-              <ReactLoading type="spinningBubbles" color="red" height={50} width={50} />
-
+      <AuthProvider>
+        <BrowserRouter>
+          {loading ? (
+            <div className="loading-overlay">
+              <div className="text-center">
+                <ReactLoading type="spinningBubbles" color="red" height={50} width={50} />
+              </div>
             </div>
-          </div>
-        ) : (
-          <Routes>
-            <Route path="/" element={<LoginForm />} />
-            <Route path="/homepage" element={<Homepage />} />
-            <Route path="/approval" element={<Approval />} />
-            <Route path="/news" element={<News />} />
-            <Route path="/tags" element={<Tags />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/program" element={<Program />} />
-            <Route path="/sequence" element={<Sequence />} />
-            <Route path="/majornews" element={<MajorNews />} />
-            <Route path="/newsbreak" element={<NewsBreak />} />
-          </Routes>
-        )}
-      </BrowserRouter>
+          ) : (
+            <Routes>
+              <Route path="/" element={<LoginForm />} />
+              <Route path="/homepage" element={<Homepage />} />
+              <Route path="/approval" element={<Approval />} />
+              <Route path="/news" element={<News />} />
+              <Route path="/tags" element={<Tags />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/program" element={<Program />} />
+              <Route path="/sequence" element={<Sequence />} />
+              <Route path="/majornews" element={<MajorNews />} />
+              <Route path="/newsbreak" element={<NewsBreak />} />
+              <Route path="/approvedreports" element={<ApprovedReports />} />
+            </Routes>
+          )}
+        </BrowserRouter>
+      </AuthProvider>
     </div>
   );
 }

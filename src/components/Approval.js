@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import "../styles/hp.css";
 import Navbar from "./Navbar";
 import axios from "axios";
 import { Dropdown, Button } from "react-bootstrap";
@@ -16,9 +15,10 @@ const Approval = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 20;
 
+    const userData = JSON.parse(localStorage.getItem("user")) || JSON.parse(sessionStorage.getItem("user"));
     const config = {
         headers: {
-            Authorization: "Bearer " + JSON.parse(localStorage.getItem("user")).token,
+            Authorization: "Bearer " + (userData ? userData.token : ""),
         },
     };
 

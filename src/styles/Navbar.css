@@ -1,0 +1,91 @@
+/* Navbar.css - professional styles for the navigation bar */
+
+.navbar-custom {
+  background-color: #003366; /* Dark blue background */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-custom .navbar-brand {
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 1.5rem;
+  letter-spacing: 1px;
+}
+
+.navbar-custom .navbar-brand:hover,
+.navbar-custom .navbar-brand:focus {
+  color: #ffcc00; /* Accent gold color on hover */
+  text-decoration: none;
+}
+
+.navbar-custom .nav-link {
+  color: #ffffff;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  transition: color 0.3s ease;
+}
+
+.navbar-custom .nav-link:hover,
+.navbar-custom .nav-link:focus {
+  color: #ffffff;
+  background-color: #0047b3; /* Updated to match background palette */
+  border-radius: 4px;
+  text-decoration: none;
+}
+
+.navbar-custom .nav-link.active {
+  color: #ffffff;
+  font-weight: 700;
+  text-decoration: none;
+  background-color: #0047b3; /* Updated to match background palette */
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+}
+
+.navbar-custom .custom-toggle {
+  border: none;
+  background-color: transparent;
+  color: #ffffff;
+  font-size: 1.25rem;
+  outline: none;
+}
+
+.navbar-custom .custom-toggle:focus,
+.navbar-custom .custom-toggle:hover {
+  color: #ffcc00;
+  box-shadow: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 991.98px) {
+  .navbar-custom .nav-link {
+    padding: 0.75rem 1rem;
+  }
+  .navbar-custom .custom-toggle {
+    font-size: 1.5rem;
+    color: #ffffff;
+    border: none;
+    padding: 0.25rem 0.5rem;
+  }
+  .navbar-custom .custom-toggle:focus,
+  .navbar-custom .custom-toggle:hover {
+    color: #ffcc00;
+    background-color: transparent;
+    box-shadow: none;
+  }
+  .navbar-custom .navbar-collapse {
+    background-color: #003366;
+    padding: 1rem;
+    border-radius: 0 0 8px 8px;
+  }
+  .navbar-custom .nav {
+    flex-direction: column;
+  }
+  .navbar-custom .nav-link {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #0047b3;
+  }
+  .navbar-custom .nav-link:last-child {
+    border-bottom: none;
+  }
+}

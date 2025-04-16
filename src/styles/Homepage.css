@@ -1,0 +1,250 @@
+/* Background for the whole page */
+body, html, #root {
+  height: 100%;
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #0025CE 0%, #00EAFF 33%, #4D3589 66%, #303E57 100%);
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  color: #333;
+}
+
+/* Container for the feed */
+.container.my-2 {
+  background-color: #f9f9f9;
+  border-radius: 15px;
+  padding: 20px;
+  max-width: 1200px;
+  margin: 2rem auto;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+}
+
+/* Feed header */
+.social-feed h3 {
+  font-weight: 700;
+  color: #4a4a4a;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+/* Search input */
+.social-feed input.form-control {
+  border-radius: 30px !important;
+  padding: 12px 25px !important;
+  font-size: 1.1rem !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  border: none !important;
+  transition: box-shadow 0.3s ease;
+  max-width: 600px;
+  margin: 0 auto 2rem auto;
+  display: block;
+}
+
+.social-feed input.form-control:focus {
+  outline: none;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.6);
+}
+
+/* Post card */
+.post.card {
+  background-color: #fff;
+  border: none !important;
+  border-radius: 15px !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+  cursor: pointer;
+  padding: 20px !important;
+}
+
+.post.card:hover {
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+  transform: translateY(-5px);
+}
+
+/* Post header */
+.post-header strong {
+  color: #2c3e50;
+  font-size: 1.2rem;
+}
+
+.post-header div {
+  color: #7f8c8d;
+}
+
+/* Post content */
+.post-content h5 {
+  color: #34495e;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.post-content p {
+  color: #555;
+  line-height: 1.4;
+}
+
+/* Tags and remarks */
+.post-content p strong {
+  color: #2980b9;
+}
+
+/* Media section images */
+.media-section img {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  transition: transform 0.3s ease;
+}
+
+.media-section img:hover {
+  transform: scale(1.05);
+}
+
+/* Media section videos */
+.media-section video {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  transition: transform 0.3s ease;
+}
+
+.media-section video:hover {
+  transform: scale(1.05);
+}
+
+/* Buttons */
+.post-actions button {
+  border-radius: 20px;
+  font-weight: 600;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.post-actions button:hover {
+  background-color: #4a69bd !important;
+  color: white !important;
+  border-color: #4a69bd !important;
+}
+
+/* Pagination overrides */
+.pagination {
+  display: flex;
+  justify-content: center;
+  padding: 1rem 0;
+  list-style: none;
+  user-select: none;
+}
+
+.page-item {
+  margin: 0 5px;
+}
+
+.page-link {
+  color: #4a69bd;
+  border-radius: 50% !important;
+  width: 36px;
+  height: 36px;
+  line-height: 34px;
+  text-align: center;
+  padding: 0 !important;
+  font-weight: 600;
+  border: 2px solid transparent;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.page-link:hover {
+  background-color: #4a69bd;
+  color: white;
+  border-color: #4a69bd;
+}
+
+.page-item.active .page-link {
+  background-color: #4a69bd;
+  color: white;
+  border-color: #4a69bd;
+}
+
+.page-item.disabled .page-link {
+  color: #ccc;
+  cursor: not-allowed;
+  border-color: transparent;
+}
+
+/* Mobile responsive styles */
+@media (max-width: 768px) {
+  /* Container full width with padding */
+  .container.my-2 {
+    max-width: 100%;
+    margin: 1rem;
+    padding: 15px;
+  }
+
+  /* Search input full width */
+  .social-feed input.form-control {
+    max-width: 100%;
+    font-size: 1rem !important;
+    padding: 10px 20px !important;
+  }
+
+  /* Post card padding, font size, and smaller width */
+  .post.card {
+    padding: 15px !important;
+    max-width: 350px;
+    margin: 0 auto 1rem auto;
+  }
+
+  .post-header strong {
+    font-size: 1rem;
+  }
+
+  .post-header div {
+    font-size: 0.8rem;
+  }
+
+  .post-content h5 {
+    font-size: 1.1rem;
+  }
+
+  .post-content p {
+    font-size: 0.9rem;
+  }
+
+  /* Media section images and videos smaller and stacked */
+  .media-section {
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .media-section img,
+  .media-section video {
+    height: 200px;
+    max-width: 100%;
+    flex-shrink: 0;
+  }
+
+  /* Audio controls full width */
+  .media-section audio {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Buttons full width and margin */
+  .post-actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .post-actions button {
+    width: 100%;
+    font-size: 1rem;
+  }
+
+  /* Pagination smaller and spaced */
+  .pagination {
+    padding: 0.5rem 0;
+  }
+
+  .page-link {
+    width: 30px;
+    height: 30px;
+    line-height: 28px;
+  }
+}

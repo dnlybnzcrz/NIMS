@@ -1,37 +1,58 @@
-/* Fullscreen background */
+/* Roboto */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+/*Open Sans */
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&display=swap');
+
+/* Global font family */
 body, html {
+  font-family: 'Roboto', sans-serif;  /* Or 'Open Sans' if you prefer */
   margin: 0;
   padding: 0;
   height: 100%;
-  background: url('../logo/FM1_Booth1.jpg') no-repeat center center fixed;
-  background-size: cover;
 }
 
-/* Center the main login container */
 .main {
   display: flex;
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background: rgba(0, 0, 0, 0.4); /* Dark overlay */
-  padding: 0 15px; 
+  background: url('../logo/FM1_Booth1.jpg') no-repeat center center fixed;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  padding: 0 15px;
+  position: relative;
 }
 
-/* Login box */
+.main::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4); /* Dark overlay */
+  z-index: 0;
+}
+
+/* Center the main login container */
 .sub-main {
+  position: relative;
+  z-index: 1;
   background-color: rgba(255, 255, 255, 0.95);
   border-radius: 10px;
   padding: 30px 50px;
   width: 380px;
   max-width: 100%;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
-  font-family: 'Roboto', sans-serif;
+  font-family: 'Roboto', sans-serif;  
   text-align: center;
 }
 
 /* Profile image */
 .container-img {
-  margin-bottom: 20px; 
+  margin-bottom: 20px;
   display: flex;
   justify-content: center;
 }
@@ -48,38 +69,153 @@ body, html {
 /* Form Heading */
 h1 {
   color: #333;
-  margin-bottom: 25px; 
+  margin-bottom: 25px;
   font-size: 26px;
   font-weight: 500;
+  font-family: 'Roboto', sans-serif; /* Or Open Sans */
+}
+
+/* Form group wrapper for input + icon */
+.form-group-wrapper {
+  position: relative;
+  margin-bottom: 20px;
 }
 
 /* Input fields */
-input {
+.form-control {
   width: 100%;
-  padding: 14px 20px;
-  margin: 12px 0; 
+  padding: 14px 20px 14px 38px !important; 
   border: 1px solid #ccc;
   border-radius: 5px;
   font-size: 16px;
+  line-height: 1.5;
   box-sizing: border-box;
   transition: all 0.3s ease;
-  font-family: 'Roboto', sans-serif;
+  font-family: 'Roboto', sans-serif; /* Or Open Sans */
+  z-index: 1; 
 }
 
-input:focus {
+/* Input focus styling */
+.form-control:focus {
   border-color: #4e73df;
   outline: none;
   box-shadow: 0 0 8px rgba(78, 115, 223, 0.3);
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
 }
 
-/* Input icons */
-.user {
+/* Button hover and focus */
+.login-btn {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.login-btn:hover,
+.login-btn:focus {
+  background-color: #2e59d9;
+  color: white;
+  outline: none;
+  box-shadow: 0 0 8px rgba(46, 89, 217, 0.6);
+}
+
+/* Error message styling */
+.error-message {
+  color: #d9534f;
+  font-size: 14px;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+/* Screen reader only */
+.sr-only {
   position: absolute;
-  top: 10px;
-  left: 10px;
-  width: 20px;
-  height: 20px;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  border: 0;
+}
+
+/* Password toggle button */
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #555;
+  font-size: 16px;
+  padding: 0;
+  z-index: 3;
+}
+
+/* Spinner for loading */
+.spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 3px solid rgba(255, 255, 255, 0.6);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  vertical-align: middle;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .sub-main {
+    width: 90%;
+    padding: 20px;
+  }
+
+  .profile {
+    width: 80px;
+    height: 80px;
+  }
+
+  .login-btn {
+    font-size: 14px;
+    padding: 12px;
+    margin-top: 20px;
+  }
+}
+
+@media (max-width: 576px) {
+  .sub-main {
+    width: 95%;
+    padding: 15px;
+  }
+
+  .profile {
+    width: 70px;
+    height: 70px;
+  }
+
+  .login-btn {
+    font-size: 14px;
+    padding: 10px;
+    margin-top: 20px;
+  }
+}
+
+.icon-left {
+  position: absolute;
+  top: 50%;
+  left: 14px;
+  transform: translateY(-50%);
+  font-size: 17px;
+  color: #555;
   pointer-events: none;
+  z-index: 2; 
 }
 
 /* Login button */
@@ -93,8 +229,8 @@ input:focus {
   cursor: pointer;
   font-size: 16px;
   transition: all 0.3s ease;
-  font-family: 'Roboto', sans-serif;
-  margin-top: 20px; 
+  font-family: 'Open Sans', sans-serif; /* Or Open Sans */
+  margin-top: 20px;
 }
 
 .login-btn:hover {
@@ -104,6 +240,96 @@ input:focus {
 .login-btn:disabled {
   background-color: #ddd;
   cursor: not-allowed;
+}
+
+.btn:hover {
+  background-color: hsl(251, 100%, 50%);
+  color: white;
+}
+
+/* Sticky Header */
+.header {
+  padding-top: 0px;
+  padding-left: 10px;
+  padding-right: 10px;
+  max-width: 40%;
+  position: -webkit-sticky;
+  position: sticky;
+  cursor: pointer;
+  top: 0;
+}
+
+.nbar {
+  display: inline-block;
+  position: relative;
+  text-align: center;
+  color: blue;
+}
+
+.fa-solid {
+  background-color: #04aa6d;
+  padding: 14px 36px;
+  color: white;
+  margin: 8px 0;
+  cursor: pointer;
+  width: 100%;
+  border-radius: 5px;
+}
+
+.nav-link.active {
+  color: green;
+  font-weight: bold; 
+}
+
+.nav-link:hover {
+  color: #0056b3; 
+}
+
+.navbar-toggler {
+  border: none; 
+}
+
+/* Remember me checkbox */
+.form-group {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.form-group input[type="checkbox"] {
+  margin-right: 10px;
+}
+
+.form-group label {
+  font-size: 14px;
+  color: #555;
+  cursor: pointer;
+}
+
+.password-visibility {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: #000000;
+}
+
+/* remember me section */
+.remember-me {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin-top: 10px;
+}
+
+/* checkbox label */
+.remember-me label {
+  font-size: 14px;
+  color: #333;
+  margin-left: 8px;
+  font-weight: normal;
 }
 
 /* Responsive Design */
@@ -121,7 +347,7 @@ input:focus {
   .login-btn {
     font-size: 14px;
     padding: 12px;
-    margin-top: 20px; 
+    margin-top: 20px;
   }
 }
 
@@ -139,6 +365,6 @@ input:focus {
   .login-btn {
     font-size: 14px;
     padding: 10px;
-    margin-top: 20px; 
+    margin-top: 20px;
   }
 }

@@ -10,9 +10,10 @@ const Tags = () => {
   const [message, setMessage] = useState(""); // State for success message
   const [error, setError] = useState(""); // State for error message
 
+  const userData = JSON.parse(localStorage.getItem("user")) || JSON.parse(sessionStorage.getItem("user"));
   const config = {
     headers: {
-      Authorization: "Bearer " + JSON.parse(localStorage.getItem("user")).token,
+      Authorization: "Bearer " + (userData ? userData.token : ""),
     },
   };
 
