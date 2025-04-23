@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Navbar from "./Navbar";
+import pbsheader from "../logo/pbsheader.png";
 import Button from "react-bootstrap/Button";
 
 const Tags = () => {
@@ -102,6 +103,9 @@ const Tags = () => {
   };
   return (
     <div>
+      <div style={{ backgroundColor: "#F1EFEC", padding: "10px 0", textAlign: "center" }}>
+        <img src={pbsheader} alt="PBS Header" style={{ maxWidth: "100%", height: "auto" }} />
+      </div>
       <Navbar />
       <br />
       <div className="container my-2 border card shadow-sm p-4 shadow-lg">

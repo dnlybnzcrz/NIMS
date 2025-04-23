@@ -49,7 +49,7 @@ body, html, #root {
 
 /* Post card */
 .post.card {
-  background-color: #F1EFEC;
+  background-color: #ffff;
   border: none !important;
   border-radius: 15px !important;
   box-shadow: 0 4px 12px rgba(3,3,3,0.1);
@@ -270,4 +270,11 @@ body, html, #root {
     height: 28px;
     line-height: 26px;
   }
+}
+
+.pbsheader-image {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 10px auto;
 }

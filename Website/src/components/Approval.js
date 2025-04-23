@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Navbar from "./Navbar";
+import pbsheader from "../logo/pbsheader.png";
 import axios from "axios";
 import { Dropdown, Button } from "react-bootstrap";
 import moment from "moment";
@@ -117,6 +118,9 @@ const Approval = () => {
 
     return (
         <div>
+            <div style={{ backgroundColor: "#F1EFEC", padding: "10px 0", textAlign: "center" }}>
+              <img src={pbsheader} alt="PBS Header" style={{ maxWidth: "100%", height: "auto" }} />
+            </div>
             <Navbar />
             <br />
             <div className="container my-2 border p-4 rounded-lg shadow-lg">

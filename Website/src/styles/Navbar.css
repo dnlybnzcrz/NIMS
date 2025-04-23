@@ -1,6 +1,10 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap');
+
 .navbar-custom {
-  background-color: #123458; /* Dark blue background replaced */
-  box-shadow: 0 2px 4px rgba(3, 3, 3, 0.1);
+  background-color: #123458;
+  box-shadow: 0 2px 6px rgba(3, 3, 3, 0.2);
+  transition: background-color 0.3s ease;
+  font-family: 'Poppins', sans-serif;
 }
 
 .navbar-custom .navbar-brand {
@@ -8,11 +12,20 @@
   font-weight: 700;
   font-size: 1.5rem;
   letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.navbar-custom .navbar-brand img {
+  height: 32px;
+  width: 32px;
+  object-fit: contain;
 }
 
 .navbar-custom .navbar-brand:hover,
 .navbar-custom .navbar-brand:focus {
-  color: #D4C9BE; /* Accent color on hover replaced */
+  color: #D4C9BE;
   text-decoration: none;
 }
 
@@ -20,46 +33,66 @@
   color: #F1EFEC;
   font-weight: 500;
   padding: 0.5rem 1rem;
-  transition: color 0.3s ease;
+  transition: color 0.3s ease, background-color 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: 4px;
 }
 
 .navbar-custom .nav-link:hover,
 .navbar-custom .nav-link:focus {
   color: #D4C9BE;
-  background-color: transparent;
-  border-radius: 4px;
+  background-color: rgba(212, 201, 190, 0.15);
   text-decoration: none;
+  box-shadow: 0 0 5px rgba(212, 201, 190, 0.5);
+  outline: none;
 }
 
 .navbar-custom .nav-link.active {
   color: #F1EFEC;
   font-weight: 700;
   text-decoration: none;
-  background-color: #030303; /* Updated to match background palette */
+  background-color: #030303;
   border-radius: 4px;
   padding: 0.5rem 1rem;
+  box-shadow: 0 0 8px #D4C9BE;
+}
+
+.navbar-custom .nav-link svg {
+  fill: currentColor;
+  width: 16px;
+  height: 16px;
 }
 
 .navbar-custom .custom-toggle {
   border: none;
   background-color: transparent;
   color: #F1EFEC;
-  font-size: 1.25rem;
+  font-size: 1.5rem;
   outline: none;
+  transition: color 0.3s ease;
+  padding: 0.5rem;
+  border-radius: 4px;
 }
 
 .navbar-custom .custom-toggle:focus,
 .navbar-custom .custom-toggle:hover {
   color: #D4C9BE;
-  box-shadow: none;
+  box-shadow: 0 0 8px #D4C9BE;
+  outline: none;
 }
 
-/* Responsive adjustments */
 @media (max-width: 991.98px) {
   .navbar-custom .nav-link {
     padding: 0.75rem 1rem;
     font-size: 1rem;
     text-align: center;
+    border-bottom: 1px solid #030303;
+    width: 100%;
+  }
+  .navbar-custom .nav-link:last-child {
+    border-bottom: none;
   }
   .navbar-custom .custom-toggle {
     font-size: 1.75rem;
@@ -71,23 +104,33 @@
   .navbar-custom .custom-toggle:hover {
     color: #D4C9BE;
     background-color: transparent;
-    box-shadow: none;
+    box-shadow: 0 0 8px #D4C9BE;
   }
   .navbar-custom .navbar-collapse {
     background-color: #123458;
     padding: 1.5rem 1rem;
     border-radius: 0 0 8px 8px;
+    transition: max-height 0.3s ease;
   }
   .navbar-custom .nav {
     flex-direction: column;
     align-items: center;
   }
-  .navbar-custom .nav-link {
-    padding: 0.75rem 1rem;
-    border-bottom: 1px solid #030303;
-    width: 100%;
+
+  .user-greeting {
+    display: none !important;
   }
-  .navbar-custom .nav-link:last-child {
-    border-bottom: none;
+  .user-icon-mobile {
+    display: inline-block !important;
+    margin-left: 10px;
   }
+  .user-icon-image {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+  }
+}
+
+.user-icon-mobile {
+  display: none;
 }

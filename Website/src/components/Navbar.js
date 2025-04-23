@@ -5,6 +5,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "../styles/Navbar.css";
 import { AuthContext } from "../context/AuthContext";
 import LogoutModal from "./LogoutModal";
+import userIcon from "../logo/user2.png";
 
 const Navigation = () => {
   const { user, logout, loading } = useContext(AuthContext);
@@ -33,7 +34,7 @@ const Navigation = () => {
     return (
       <Navbar expand="lg" className="navbar-custom" aria-busy="true">
         <Container>
-          <Navbar.Brand href="#home">PBS NIMS</Navbar.Brand>
+          <Navbar.Brand as={NavLink} to="/homepage">PBS NIMS</Navbar.Brand>
           <div>Loading...</div>
         </Container>
       </Navbar>
@@ -44,12 +45,17 @@ const Navigation = () => {
     <>
       <Navbar expand="lg" className="navbar-custom">
         <Container>
-          <Navbar.Brand href="#home">PBS NIMS</Navbar.Brand>
-          <Navbar.Toggle
-            aria-controls="basic-navbar-nav"
-            aria-label="Toggle navigation"
-            className="custom-toggle"
-          />
+          <Navbar.Brand as={NavLink} to="/homepage">PBS NIMS</Navbar.Brand>
+          <div className="toggle-and-usericon-wrapper d-lg-none" style={{ display: 'flex', alignItems: 'center' }}>
+            <NavLink to="/profile" className="user-icon-mobile" aria-label="User Profile" style={{ marginRight: '10px' }}>
+              <img src={userIcon} alt="User Icon" className="user-icon-image" />
+            </NavLink>
+            <Navbar.Toggle
+              aria-controls="basic-navbar-nav"
+              aria-label="Toggle navigation"
+              className="custom-toggle"
+            />
+          </div>
           <Navbar.Collapse id="basic-navbar-nav">
             <Nav className="me-auto">
               {hasRole(["reporter", "producer", "editor", "super", "programmer"]) && (
@@ -77,7 +83,7 @@ const Navigation = () => {
               )}
             </Nav>
             <Nav className="ms-auto">
-              <NavLink to="/profile" className="nav-link">
+              <NavLink to="/profile" className="nav-link user-greeting d-none d-lg-block">
                 Hello, {user ? user.name.first : "Guest"}
               </NavLink>
               <Nav.Link onClick={handleLogoutClick} className="nav-link" role="button" tabIndex={0}>
