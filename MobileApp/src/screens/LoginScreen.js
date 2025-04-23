@@ -36,11 +36,8 @@ const LoginScreen = ({ navigation }) => {
 
       const userData = response.data;
 
-      if (rememberMe) {
-        await AsyncStorage.setItem('user', JSON.stringify(userData));
-      } else {
-        await AsyncStorage.removeItem('user');
-      }
+      // Always store user token in AsyncStorage regardless of rememberMe
+      await AsyncStorage.setItem('user', JSON.stringify(userData));
 
       const userDetailsResponse = await axios.get(
         'https://api.radiopilipinas.online/login/getDetails',
