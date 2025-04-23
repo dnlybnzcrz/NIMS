@@ -6,32 +6,68 @@ import {
   TouchableOpacity, 
   StyleSheet, 
   Alert, 
-  Image 
+  Image,
+  Switch,
+  ActivityIndicator
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const LoginScreen = ({ navigation }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false); 
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
-    if (username === 'admin' && password === '123') {
-      Alert.alert('Login Successful', `Welcome, ${username}!`);
-      navigation.replace('Home'); 
-    } else {
-      Alert.alert('Error', 'Invalid username or password');
+  const handleLogin = async () => {
+    setErrorMessage('');
+    setLoading(true);
+    const data = { username, password };
+
+    try {
+      const response = await axios.post(
+        'https://api.radiopilipinas.online/login',
+        data,
+        { headers: { 'Content-Type': 'application/json' } }
+      );
+
+      const userData = response.data;
+
+      if (rememberMe) {
+        await AsyncStorage.setItem('user', JSON.stringify(userData));
+      } else {
+        await AsyncStorage.removeItem('user');
+      }
+
+      const userDetailsResponse = await axios.get(
+        'https://api.radiopilipinas.online/login/getDetails',
+        {
+          headers: {
+            Authorization: `Bearer ${userData.token}`,
+          },
+        }
+      );
+
+      const userDetails = userDetailsResponse.data.userData;
+      await AsyncStorage.setItem('userDetails', JSON.stringify(userDetails));
+
+      navigation.replace('Home');
+    } catch (error) {
+      setErrorMessage('Incorrect username or password!');
+      console.log(error);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <View style={styles.container}>
-      <Image source={require('../../assets/bg.png')} style={styles.backgroundLogo} />
-
-     
+      <Image source={require('../../assets/wobg2.png')} style={styles.backgroundLogo} />
       <Image source={require('../../assets/Logo.png')} style={styles.logo} />
 
-      
       <View style={styles.inputContainer}>
         <Icon name="user" size={20} color="#666" style={styles.icon} />
         <TextInput
@@ -44,7 +80,6 @@ const LoginScreen = ({ navigation }) => {
         />
       </View>
 
-      
       <View style={styles.inputContainer}>
         <Icon name="lock" size={20} color="#666" style={styles.icon} />
         <TextInput
@@ -60,9 +95,25 @@ const LoginScreen = ({ navigation }) => {
         </TouchableOpacity>
       </View>
 
-      
-      <TouchableOpacity style={styles.button} onPress={handleLogin}>
-        <Text style={styles.buttonText}>Login</Text>
+      <View style={styles.rememberMeContainer}>
+        <Switch
+          value={rememberMe}
+          onValueChange={setRememberMe}
+          thumbColor={rememberMe ? '#333' : '#f4f3f4'}
+          trackColor={{ false: '#767577', true: '#81b0ff' }}
+          accessibilityLabel="Remember me switch"
+        />
+        <Text style={styles.rememberMeText}>Remember me</Text>
+      </View>
+
+      {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
+
+      <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
+        {loading ? (
+          <ActivityIndicator size="small" color="#fff" />
+        ) : (
+          <Text style={styles.buttonText}>Login</Text>
+        )}
       </TouchableOpacity>
     </View>
   );
@@ -78,10 +129,10 @@ const styles = StyleSheet.create({
   },
   backgroundLogo: {
     position: 'absolute',
-    top: 80,
-    width: 150,
-    height: 150,
-    opacity: 1,  
+    bottom: 20,
+    width: 250,
+    height: 250,
+    opacity: 1,
     resizeMode: 'contain',
   },
   logo: {
@@ -112,6 +163,21 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     color: '#333',
+  },
+  rememberMeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '90%',
+    marginBottom: 15,
+  },
+  rememberMeText: {
+    marginLeft: 10,
+    fontSize: 16,
+    color: '#333',
+  },
+  errorText: {
+    color: 'red',
+    marginBottom: 10,
   },
   button: {
     width: '90%',
