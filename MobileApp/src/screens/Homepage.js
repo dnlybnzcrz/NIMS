@@ -1,21 +1,29 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, TextInput, FlatList, TouchableOpacity, ActivityIndicator, Alert, StyleSheet, Modal, Button } from "react-native";
+import React, { useEffect, useState, useMemo } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  FlatList,
+  TouchableOpacity,
+  ActivityIndicator,
+  Alert,
+  StyleSheet,
+  Modal,
+} from "react-native";
 import axios from "axios";
 import moment from "moment";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "../../contexts/AuthContext";
 import StoryModal from "../components/StoryModal";
 import MediaModal from "../components/MediaModal";
 import ReportCard from "../components/ReportCard";
 import ScreenWrapper from "../components/ScreenWrapper";
 
-const rowsPerPage = 20;
-
 const Homepage = () => {
   const [approvedReports, setApprovedReports] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [selectedReport, setSelectedReport] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [currentPage, setCurrentPage] = useState(0);
   const [showMediaModal, setShowMediaModal] = useState(false);
   const [mediaUrls, setMediaUrls] = useState([]);
   const [mediaType, setMediaType] = useState(null);
@@ -23,6 +31,12 @@ const Homepage = () => {
   const [loading, setLoading] = useState(false);
 
   const { userToken, setUserToken } = useAuth();
+
+  const config = {
+    headers: {
+      Authorization: userToken ? `Bearer ${userToken}` : "",
+    },
+  };
 
   useEffect(() => {
     if (userToken) {
@@ -32,28 +46,19 @@ const Homepage = () => {
     }
   }, [userToken]);
 
-  const config = {
-    headers: {
-      Authorization: userToken ? `Bearer ${userToken}` : "",
-    },
-  };
-
   const fetchApprovedReports = () => {
     setLoading(true);
     axios
       .get("https://api.radiopilipinas.online/nims/view", config)
       .then((res) => {
-        console.log("API response first report:", res.data.newsDataList[0]);
-        const filteredApprovedReports = res.data.newsDataList.filter(
-          (report) => report.approved === true
-        );
-        setApprovedReports(filteredApprovedReports);
-        setLoading(false);
+        const filtered = res.data.newsDataList.filter((r) => r.approved === true);
+        setApprovedReports(filtered);
       })
       .catch((err) => {
-        console.log(err);
-        setLoading(false);
-      });
+        console.error(err);
+        Alert.alert("Error", "Failed to fetch approved reports.");
+      })
+      .finally(() => setLoading(false));
   };
 
   const handleShowModal = (report) => {
@@ -63,10 +68,22 @@ const Homepage = () => {
 
   const handleCloseModal = () => {
     setShowModal(false);
+    setSelectedReport(null);
   };
 
+  const S3_BASE_URL = "https://pbs-nims.s3.ap-southeast-1.amazonaws.com";
+
   const handleShowMediaModal = (mediaItems, type, initialIndex = 0) => {
-    setMediaUrls(mediaItems);
+    if (!mediaItems) return;
+
+    // Prefix media URLs with S3 base URL
+    const prefixedMediaItems = {
+      audios: mediaItems.audios ? mediaItems.audios.map((item) => S3_BASE_URL + item) : [],
+      images: mediaItems.images ? mediaItems.images.map((item) => S3_BASE_URL + item) : [],
+      videos: mediaItems.videos ? mediaItems.videos.map((item) => S3_BASE_URL + item) : [],
+    };
+
+    setMediaUrls(prefixedMediaItems);
     setMediaType(type);
     setMediaInitialIndex(initialIndex);
     setShowMediaModal(true);
@@ -79,7 +96,7 @@ const Homepage = () => {
     setMediaInitialIndex(0);
   };
 
-  const filterReports = () => {
+  const filteredReports = useMemo(() => {
     return approvedReports.filter((report) => {
       const { author, lead, tags, dateCreated } = report;
       const formattedDate = moment(dateCreated).format("MM/DD/YYYY, h:mm:ss a");
@@ -99,53 +116,31 @@ const Homepage = () => {
         (formattedDate && formattedDate.toLowerCase().includes(searchQuery.toLowerCase()))
       );
     });
-  };
-
-  const paginatedReports = filterReports().slice(
-    currentPage * rowsPerPage,
-    (currentPage + 1) * rowsPerPage
-  );
-
-  const handlePageChange = (direction) => {
-    const totalPages = Math.ceil(filterReports().length / rowsPerPage);
-    if (direction === "next" && currentPage < totalPages - 1) {
-      setCurrentPage(currentPage + 1);
-    } else if (direction === "prev" && currentPage > 0) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
+  }, [approvedReports, searchQuery]);
 
   const handleDeleteReport = (reportId) => {
-    Alert.alert(
-      "Confirm Delete",
-      "Are you sure you want to delete this report?",
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
+    Alert.alert("Confirm Delete", "Are you sure you want to delete this report?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () => {
+          axios
+            .delete(`https://api.radiopilipinas.online/nims/delete/${reportId}`, config)
+            .then(() => {
+              setApprovedReports((prev) => prev.filter((r) => r._id !== reportId));
+            })
+            .catch((err) => {
+              console.error(err);
+              Alert.alert("Error", "Failed to delete report.");
+            });
         },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => {
-            axios
-              .delete(`https://api.radiopilipinas.online/nims/delete/${reportId}`, config)
-              .then(() => {
-                setApprovedReports(
-                  approvedReports.filter((report) => report._id !== reportId)
-                );
-              })
-              .catch((err) => {
-                console.error(err);
-              });
-          },
-        },
-      ]
-    );
+      },
+    ]);
   };
 
-  const renderReport = ({ item, index }) => (
-    <View key={item._id} style={index !== paginatedReports.length - 1 ? styles.reportContainer : null}>
+  const renderReport = ({ item }) => (
+    <View key={item._id} style={{ marginBottom: 12 }}>
       <ReportCard
         report={item}
         handleShowModal={handleShowModal}
@@ -153,26 +148,9 @@ const Homepage = () => {
         handleShowMediaModal={handleShowMediaModal}
         searchQuery={searchQuery}
       />
-      {index !== paginatedReports.length - 1 && <View style={styles.separator} />}
     </View>
   );
 
-  if (!userToken) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.noTokenText}>You are not logged in. Please login to view reports.</Text>
-        <TouchableOpacity
-          style={styles.logoutButton}
-          onPress={async () => {
-            await AsyncStorage.removeItem("user");
-            setUserToken(null);
-          }}
-        >
-          <Text style={styles.logoutButtonText}>Go to Login</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
 
   return (
     <ScreenWrapper>
@@ -181,54 +159,42 @@ const Homepage = () => {
         placeholder="Search by source, headline, lead, tags, or date/time"
         value={searchQuery}
         onChangeText={setSearchQuery}
+        placeholderTextColor="#6b6b6b"
       />
+
       {loading ? (
-        <ActivityIndicator size="large" color="#007bff" style={styles.loadingIndicator} />
-      ) : paginatedReports.length ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#123458" />
+        </View>
+      ) : filteredReports.length ? (
         <FlatList
-          data={paginatedReports}
+          data={filteredReports}
           renderItem={renderReport}
           keyExtractor={(item) => item._id}
           contentContainerStyle={styles.feed}
+          showsVerticalScrollIndicator={false}
+          refreshing={loading}
+          onRefresh={fetchApprovedReports}
         />
       ) : (
         <Text style={styles.noReportsText}>No approved reports found!</Text>
       )}
-      <View style={styles.paginationContainer}>
-        <Button
-          title="Previous"
-          onPress={() => handlePageChange("prev")}
-          disabled={currentPage === 0}
-        />
-        <Text style={styles.pageNumber}>
-          Page {currentPage + 1} of {Math.ceil(filterReports().length / rowsPerPage)}
-        </Text>
-        <Button
-          title="Next"
-          onPress={() => handlePageChange("next")}
-          disabled={currentPage >= Math.ceil(filterReports().length / rowsPerPage) - 1}
-        />
-      </View>
 
-      <Modal visible={showModal} animationType="slide" onRequestClose={handleCloseModal}>
-        {selectedReport && (
-          <StoryModal
-            showModal={showModal}
-            handleCloseModal={handleCloseModal}
-            selectedNewsItem={selectedReport}
-          />
-        )}
+      <Modal visible={!!selectedReport} animationType="slide" onRequestClose={handleCloseModal}>
+        <StoryModal
+          showModal={showModal}
+          handleCloseModal={handleCloseModal}
+          selectedNewsItem={selectedReport}
+        />
       </Modal>
 
       <Modal visible={showMediaModal} animationType="slide" onRequestClose={handleCloseMediaModal}>
-        {mediaUrls.length > 0 && (
-          <MediaModal
-            show={showMediaModal}
-            handleClose={handleCloseMediaModal}
-            mediaItems={mediaUrls}
-            initialIndex={mediaInitialIndex}
-          />
-        )}
+        <MediaModal
+          show={showMediaModal}
+          handleClose={handleCloseMediaModal}
+          mediaItems={mediaUrls}
+          initialIndex={mediaInitialIndex}
+        />
       </Modal>
     </ScreenWrapper>
   );
@@ -236,64 +202,37 @@ const Homepage = () => {
 
 const styles = StyleSheet.create({
   searchInput: {
-    height: 40,
+    height: 45,
     marginHorizontal: 15,
-    marginBottom: 15,
-    paddingHorizontal: 15,
-    borderColor: "#D4C9BE",
-    borderWidth: 1,
-    borderRadius: 25,
-    backgroundColor: "#f5f0e6",
+    marginBottom: 20,
+    paddingHorizontal: 20,
+    borderColor: "#123458",
+    borderWidth: 1.5,
+    borderRadius: 30,
+    backgroundColor: "#ffffff",
     fontSize: 16,
     color: "#123458",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
   },
   feed: {
     paddingHorizontal: 15,
-    paddingBottom: 20,
-  },
-  paginationContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 20,
-  },
-  pageNumber: {
-    marginHorizontal: 10,
-    color: "#D4C9BE",
-  },
-  reportContainer: {
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderColor: "#D4C9BE",
-  },
-  separator: {
-    height: 1,
-    backgroundColor: "#D4C9BE",
-    marginVertical: 10,
   },
   noReportsText: {
     textAlign: "center",
     fontSize: 18,
-    color: "#D4C9BE",
+    color: "#999999",
+    marginTop: 50,
   },
   noTokenText: {
     textAlign: "center",
     fontSize: 18,
-    color: "#ff6666",
+    color: "#ff4d4d",
   },
-  logoutButton: {
-    backgroundColor: "#123458",
-    padding: 10,
-    borderRadius: 5,
-    marginTop: 10,
-    marginHorizontal: 50,
-  },
-  logoutButtonText: {
-    textAlign: "center",
-    color: "#D4C9BE",
-    fontSize: 16,
-  },
-  loadingIndicator: {
+  loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",

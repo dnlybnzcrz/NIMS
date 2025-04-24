@@ -6,7 +6,7 @@ import pbsheader from "./pbsheader.png";
 
 const ScreenWrapper = ({ children }) => {
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
       <LinearGradient
         colors={['#123458', '#D4C9BE', '#123458', '#030303']}
         locations={[0, 0.33, 0.66, 1]}
@@ -26,18 +26,17 @@ const ScreenWrapper = ({ children }) => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#123458',
+    backgroundColor: "#F1EFEC",
   },
   container: {
     flex: 1,
-    paddingTop: 10,
   },
   header: {
     alignItems: "center",
     marginBottom: 10,
     backgroundColor: "#F1EFEC", // matched to gradient dark blue
     paddingVertical: 10,
-    paddingTop: 1,
+    
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
@@ -45,7 +44,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   headerImage: {
-    width: "90%",
+    width: "100%",
     height: 60,
   },
   content: {

@@ -3,22 +3,59 @@ import { Modal, View, Text, Image, ScrollView, Button, StyleSheet, Dimensions } 
 
 const { width, height } = Dimensions.get("window");
 
-const MediaModal = ({ show, handleClose, mediaItems, initialIndex }) => {
-  if (!mediaItems || mediaItems.length === 0) return null;
+const S3_BASE_URL = "https://pbs-nims.s3.ap-southeast-1.amazonaws.com";
 
-  // For simplicity, show the first media item (initialIndex)
-  const media = mediaItems[initialIndex];
+const MediaModal = ({ show, handleClose, mediaItems, initialIndex }) => {
+  if (
+    !mediaItems ||
+    (!mediaItems.images?.length && !mediaItems.audios?.length && !mediaItems.videos?.length)
+  )
+    return null;
 
   return (
     <Modal visible={show} animationType="slide" onRequestClose={handleClose}>
       <View style={styles.container}>
-        <ScrollView contentContainerStyle={styles.content} horizontal pagingEnabled>
-          {mediaItems.map((item, index) => (
-            <View key={index} style={styles.mediaWrapper}>
-              {/* Assuming media is image URL; for audio/video, additional handling needed */}
-              <Image source={{ uri: item }} style={styles.media} resizeMode="contain" />
+        <ScrollView contentContainerStyle={styles.content}>
+          {/* Render audio files */}
+          {mediaItems.audios && mediaItems.audios.length > 0 && (
+            <View style={styles.mediaSection}>
+              <Text style={styles.sectionTitle}>Audio Files</Text>
+              {mediaItems.audios.map((audio, index) => (
+                <Text key={index} style={styles.mediaText}>
+                  Audio: {S3_BASE_URL + audio}
+                </Text>
+              ))}
             </View>
-          ))}
+          )}
+
+          {/* Render image files */}
+          {mediaItems.images && mediaItems.images.length > 0 && (
+            <View style={styles.mediaSection}>
+              <Text style={styles.sectionTitle}>Images</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {mediaItems.images.map((image, index) => (
+                  <Image
+                    key={index}
+                    source={{ uri: S3_BASE_URL + image }}
+                    style={styles.image}
+                    resizeMode="contain"
+                  />
+                ))}
+              </ScrollView>
+            </View>
+          )}
+
+          {/* Render video files */}
+          {mediaItems.videos && mediaItems.videos.length > 0 && (
+            <View style={styles.mediaSection}>
+              <Text style={styles.sectionTitle}>Videos</Text>
+              {mediaItems.videos.map((video, index) => (
+                <Text key={index} style={styles.mediaText}>
+                  Video: {S3_BASE_URL + video}
+                </Text>
+              ))}
+            </View>
+          )}
         </ScrollView>
         <Button title="Close" onPress={handleClose} />
       </View>
@@ -32,19 +69,30 @@ const styles = StyleSheet.create({
     backgroundColor: "#000",
     justifyContent: "center",
     alignItems: "center",
+    padding: 10,
   },
   content: {
     alignItems: "center",
   },
-  mediaWrapper: {
-    width: width,
-    height: height * 0.75,
-    justifyContent: "center",
-    alignItems: "center",
+  mediaSection: {
+    marginBottom: 20,
+    width: width * 0.9,
   },
-  media: {
-    width: "100%",
-    height: "100%",
+  sectionTitle: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  mediaText: {
+    color: "#fff",
+    marginBottom: 5,
+  },
+  image: {
+    width: 200,
+    height: 200,
+    marginRight: 10,
+    borderRadius: 10,
   },
 });
 

@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Image, AccessibilityInfo } from "react-native";
 import moment from "moment";
 
 const ReportCard = ({ report, handleShowModal, handleDeleteReport, handleShowMediaModal, searchQuery, userRole }) => {
@@ -23,102 +23,125 @@ const ReportCard = ({ report, handleShowModal, handleDeleteReport, handleShowMed
     );
   };
 
-  
   // Calculate total media count
   const mediaCount =
     (files?.audios?.length || 0) +
     (files?.images?.length || 0) +
     (files?.videos?.length || 0);
 
+  const S3_BASE_URL = "https://pbs-nims.s3.ap-southeast-1.amazonaws.com";
+
   return (
-    <View style={styles.card}>
-      <TouchableOpacity onPress={() => handleShowModal(report)}>
-        <Text style={styles.headline}>{highlightText(report.lead || "No Headline")}</Text>
-      </TouchableOpacity>
-      <Text style={styles.author}>
-        By {author?.name?.first || "N/A"} {author?.name?.middle ? author.name.middle + " " : ""}{author?.name?.last || "N/A"} - {author?.station || "N/A"}
-      </Text>
-      <Text style={styles.date}>{dateCreated ? moment(dateCreated).format("MM/DD/YYYY, h:mm:ss a") : "N/A"}</Text>
-      <Text style={styles.lead}>{highlightText(lead || "No content available.")}</Text>
-      <Text style={styles.tags}>
-        {tags && Array.isArray(tags) && tags.length > 0 ? tags.join(", ") : "No tags selected"}
-      </Text>
-      {mediaCount > 0 ? (
-        <TouchableOpacity onPress={() => handleShowMediaModal(files)}>
-          <Text style={styles.mediaLink}>View Media ({mediaCount})</Text>
-        </TouchableOpacity>
-      ) : (
-        <Text style={styles.noMedia}>No media available</Text>
-      )}
-      <Text style={styles.remarks}>{remarks || ""}</Text>
-      {userRole === "super" && (
-        <TouchableOpacity
-          style={styles.deleteButton}
-          onPress={() => handleDeleteReport(_id)}
+    <TouchableOpacity
+      onPress={() => handleShowModal(report)}
+      activeOpacity={0.7}
+      accessibilityRole="button"
+      accessibilityLabel={`Report card. Headline: ${headline || "No headline"}. By ${author?.name?.first || "N/A"} ${author?.name?.middle ? author.name.middle + " " : ""}${author?.name?.last || "N/A"}.`}
+    >
+      <View style={styles.card}>
+        {files?.images && files.images.length > 0 ? (
+          <Image
+            source={{ uri: S3_BASE_URL + files.images[0] }}
+            style={styles.thumbnail}
+            resizeMode="cover"
+            accessibilityLabel="Report image thumbnail"
+          />
+        ) : (
+          <View style={styles.noMediaPlaceholder}>
+            <Text style={styles.noMediaText}>No images available</Text>
+          </View>
+        )}
+        <Text
+          style={[styles.headline, styles.headlineBackground]}
+          numberOfLines={2}
+          ellipsizeMode="tail"
         >
-          <Text style={styles.deleteButtonText}>Delete Report</Text>
-        </TouchableOpacity>
-      )}
-    </View>
+          {highlightText(
+            lead
+              ? lead.split(" ").length > 20
+                ? lead.split(" ").slice(0, 15).join(" ") + "..."
+                : lead
+              : "No Headline"
+          )}
+        </Text>
+        <View style={styles.infoContainer}>
+          <Text style={styles.author} numberOfLines={1} ellipsizeMode="tail">
+            By {author?.name?.first || "N/A"} {author?.name?.middle ? author.name.middle + " " : ""}{author?.name?.last || "N/A"} - {author?.station || "N/A"}
+          </Text>
+          <Text style={styles.tags} numberOfLines={1} ellipsizeMode="tail">
+            {tags && Array.isArray(tags) && tags.length > 0 ? tags.join(", ") : "No tags selected"}
+          </Text>
+          <Text style={styles.date}>{dateCreated ? moment(dateCreated).format("MM/DD/YYYY, h:mm:ss a") : "N/A"}</Text>
+        </View>
+      </View>
+    </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "#fff",
-    padding: 15,
-    borderRadius: 8,
+    backgroundColor: "#f9f9f9",
+    padding: 10,
+    borderRadius: 16,
     shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 3,
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 5,
+    marginVertical: 8,
+    marginHorizontal: 12,
+  },
+  thumbnail: {
+    width: "100%",
+    height: 220,
+    borderRadius: 12,
+    backgroundColor: "#f0f0f0",
+    marginBottom: 10,
+  },
+  noMediaPlaceholder: {
+    width: "100%",
+    height: 220,
+    borderRadius: 12,
+    backgroundColor: "#e0e0e0",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  noMediaText: {
+    fontSize: 14,
+    color: "#888",
+    fontStyle: "italic",
+  },
+  infoContainer: {
+    paddingHorizontal: 4,
   },
   headline: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 5,
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#222",
+    marginBottom: 6,
+    lineHeight: 26,
+  },
+  headlineBackground: {
+    paddingHorizontal: 6,
+    paddingVertical: 4,
+    borderRadius: 8,
   },
   author: {
     fontSize: 14,
     color: "#555",
-    marginBottom: 3,
+    marginBottom: 2,
   },
   date: {
     fontSize: 12,
     color: "#888",
-    marginBottom: 10,
-  },
-  lead: {
-    fontSize: 16,
-    marginBottom: 10,
+    marginBottom: 6,
   },
   tags: {
-    fontSize: 14,
+    fontSize: 13,
     fontStyle: "italic",
-    marginBottom: 10,
-  },
-  mediaLink: {
-    color: "#007bff",
-    marginBottom: 10,
-  },
-  noMedia: {
-    fontSize: 14,
-    color: "#888",
-    marginBottom: 10,
-  },
-  remarks: {
-    fontSize: 14,
-    marginBottom: 10,
-  },
-  deleteButton: {
-    backgroundColor: "#dc3545",
-    paddingVertical: 8,
-    borderRadius: 5,
-    alignItems: "center",
-  },
-  deleteButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
+    color: "#666",
+    marginBottom: 6,
   },
   highlight: {
     backgroundColor: "yellow",
