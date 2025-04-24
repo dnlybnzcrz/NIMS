@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, TextInput, Image, FlatList, TouchableOpacity, ActivityIndicator, Alert, StyleSheet, Modal, Button } from "react-native";
+import { LinearGradient } from 'expo-linear-gradient';
 import axios from "axios";
 import moment from "moment";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useAuth } from "../../contexts/AuthContext"; // Import the custom hook for AuthContext
 import Navbar from "../components/Navbar";
 import StoryModal from "../components/StoryModal";
 import MediaModal from "../components/MediaModal";
@@ -22,53 +23,22 @@ const Homepage = () => {
   const [mediaType, setMediaType] = useState(null);
   const [mediaInitialIndex, setMediaInitialIndex] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [token, setToken] = useState(null);
+
+  const { userToken, setUserToken } = useAuth();  // Use the AuthContext to get and set the token
 
   useEffect(() => {
-    const getUserToken = async () => {
-      try {
-        const userString = await AsyncStorage.getItem("user");
-        if (userString) {
-          const user = JSON.parse(userString);
-          if (user && user.token) {
-            setToken(user.token);
-          } else {
-            setToken(null);
-            console.error("Token not found in user object");
-          }
-        } else {
-          setToken(null);
-          console.error("No user found in AsyncStorage");
-        }
-      } catch (error) {
-        setToken(null);
-        console.error("Error reading user token from AsyncStorage", error);
-      }
-    };
-    getUserToken();
-  }, []);
-
-  const config = {
-    headers: {
-      Authorization: token ? `Bearer ${token}` : "",
-    },
-  };
-
-  useEffect(() => {
-    if (token) {
+    if (userToken) {
       fetchApprovedReports();
     } else {
       console.error("No token found, user is not authenticated");
     }
-  }, [token]);
+  }, [userToken]);
 
-  if (!token) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.noTokenText}>You are not logged in. Please login to view reports.</Text>
-      </View>
-    );
-  }
+  const config = {
+    headers: {
+      Authorization: userToken ? `Bearer ${userToken}` : "",
+    },
+  };
 
   const fetchApprovedReports = () => {
     setLoading(true);
@@ -189,8 +159,25 @@ const Homepage = () => {
     </View>
   );
 
+  if (!userToken) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.noTokenText}>You are not logged in. Please login to view reports.</Text>
+        <TouchableOpacity
+          style={styles.logoutButton}
+          onPress={async () => {
+            await AsyncStorage.removeItem("user");
+            setUserToken(null); // Update the token in AuthContext
+          }}
+        >
+          <Text style={styles.logoutButtonText}>Go to Login</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   return (
-    <View style={styles.container}>
+    <LinearGradient colors={['#123458', '#D4C9BE', '#123458', '#030303']} locations={[0, 0.33, 0.66, 1]} style={styles.container}>
       <View style={styles.header}>
         <Image source={pbsheader} style={styles.headerImage} resizeMode="contain" />
       </View>
@@ -200,8 +187,6 @@ const Homepage = () => {
         placeholder="Search by source, headline, lead, tags, or date/time"
         value={searchQuery}
         onChangeText={setSearchQuery}
-        accessibilityLabel="Search reports"
-        accessibilityRole="search"
       />
       {loading ? (
         <ActivityIndicator size="large" color="#007bff" style={styles.loadingIndicator} />
@@ -253,14 +238,13 @@ const Homepage = () => {
           />
         )}
       </Modal>
-    </View>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f9f9f9",
     paddingTop: 10,
   },
   header: {
@@ -293,49 +277,52 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     paddingBottom: 20,
   },
+  paginationContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 20,
+  },
+  pageNumber: {
+    marginHorizontal: 10,
+  },
   reportContainer: {
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 15,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderColor: "#ddd",
   },
   separator: {
-    borderBottomColor: "#e0e0e0",
-    borderBottomWidth: 1,
+    height: 1,
+    backgroundColor: "#ddd",
     marginVertical: 10,
   },
   noReportsText: {
     textAlign: "center",
-    marginTop: 30,
     fontSize: 18,
-    color: "#666",
+    color: "#777",
   },
   noTokenText: {
-    flex: 1,
     textAlign: "center",
-    marginTop: 20,
     fontSize: 18,
-    color: "red",
+    color: "#ff0000",
   },
-  paginationContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginHorizontal: 20,
-    marginVertical: 15,
+  logoutButton: {
+    backgroundColor: "#007bff",
+    padding: 10,
+    borderRadius: 5,
+    marginTop: 10,
+    marginHorizontal: 50,
   },
-  pageNumber: {
+  logoutButtonText: {
+    textAlign: "center",
+    color: "#fff",
     fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
   },
   loadingIndicator: {
-    marginTop: 20,
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    height: "100%",
   },
 });
 

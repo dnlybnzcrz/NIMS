@@ -1,20 +1,13 @@
-import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  StyleSheet, 
-  Alert, 
-  Image,
-  Switch,
-  ActivityIndicator
-} from 'react-native';
+import React, { useState, useContext } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image, Switch, ActivityIndicator } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AuthContext } from '../../contexts/AuthContext';  // Ensure this import is correct
 
 const LoginScreen = ({ navigation }) => {
+  const { setUserToken } = useContext(AuthContext);  // Access setUserToken from context
+
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -36,8 +29,9 @@ const LoginScreen = ({ navigation }) => {
 
       const userData = response.data;
 
-      // Always store user token in AsyncStorage regardless of rememberMe
+      // Store token and user data in AsyncStorage
       await AsyncStorage.setItem('user', JSON.stringify(userData));
+      setUserToken(userData.token); // Set token in AuthContext
 
       const userDetailsResponse = await axios.get(
         'https://api.radiopilipinas.online/login/getDetails',
@@ -51,7 +45,7 @@ const LoginScreen = ({ navigation }) => {
       const userDetails = userDetailsResponse.data.userData;
       await AsyncStorage.setItem('userDetails', JSON.stringify(userDetails));
 
-      navigation.replace('Home');
+      navigation.replace('Home'); // Navigate to Home screen after successful login
     } catch (error) {
       setErrorMessage('Incorrect username or password!');
       console.log(error);
