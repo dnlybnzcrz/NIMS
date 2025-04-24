@@ -1,14 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, TextInput, Image, FlatList, TouchableOpacity, ActivityIndicator, Alert, StyleSheet, Modal, Button } from "react-native";
-import { LinearGradient } from 'expo-linear-gradient';
+import { View, Text, TextInput, FlatList, TouchableOpacity, ActivityIndicator, Alert, StyleSheet, Modal, Button } from "react-native";
 import axios from "axios";
 import moment from "moment";
-import { useAuth } from "../../contexts/AuthContext"; // Import the custom hook for AuthContext
-import Navbar from "../components/Navbar";
+import { useAuth } from "../../contexts/AuthContext";
 import StoryModal from "../components/StoryModal";
 import MediaModal from "../components/MediaModal";
 import ReportCard from "../components/ReportCard";
-import pbsheader from "../components/pbsheader.png";
+import ScreenWrapper from "../components/ScreenWrapper";
 
 const rowsPerPage = 20;
 
@@ -24,7 +22,7 @@ const Homepage = () => {
   const [mediaInitialIndex, setMediaInitialIndex] = useState(0);
   const [loading, setLoading] = useState(false);
 
-  const { userToken, setUserToken } = useAuth();  // Use the AuthContext to get and set the token
+  const { userToken, setUserToken } = useAuth();
 
   useEffect(() => {
     if (userToken) {
@@ -167,7 +165,7 @@ const Homepage = () => {
           style={styles.logoutButton}
           onPress={async () => {
             await AsyncStorage.removeItem("user");
-            setUserToken(null); // Update the token in AuthContext
+            setUserToken(null);
           }}
         >
           <Text style={styles.logoutButtonText}>Go to Login</Text>
@@ -177,11 +175,7 @@ const Homepage = () => {
   }
 
   return (
-    <LinearGradient colors={['#123458', '#D4C9BE', '#123458', '#030303']} locations={[0, 0.33, 0.66, 1]} style={styles.container}>
-      <View style={styles.header}>
-        <Image source={pbsheader} style={styles.headerImage} resizeMode="contain" />
-      </View>
-      <Navbar />
+    <ScreenWrapper>
       <TextInput
         style={styles.searchInput}
         placeholder="Search by source, headline, lead, tags, or date/time"
@@ -216,7 +210,6 @@ const Homepage = () => {
         />
       </View>
 
-      {/* Story Modal */}
       <Modal visible={showModal} animationType="slide" onRequestClose={handleCloseModal}>
         {selectedReport && (
           <StoryModal
@@ -227,7 +220,6 @@ const Homepage = () => {
         )}
       </Modal>
 
-      {/* Media Modal */}
       <Modal visible={showMediaModal} animationType="slide" onRequestClose={handleCloseMediaModal}>
         {mediaUrls.length > 0 && (
           <MediaModal
@@ -238,40 +230,22 @@ const Homepage = () => {
           />
         )}
       </Modal>
-    </LinearGradient>
+    </ScreenWrapper>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingTop: 10,
-  },
-  header: {
-    alignItems: "center",
-    marginBottom: 10,
-    backgroundColor: "#007bff",
-    paddingVertical: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
-    elevation: 3,
-  },
-  headerImage: {
-    width: "90%",
-    height: 60,
-  },
   searchInput: {
     height: 40,
     marginHorizontal: 15,
     marginBottom: 15,
     paddingHorizontal: 15,
-    borderColor: "#007bff",
+    borderColor: "#D4C9BE",
     borderWidth: 1,
     borderRadius: 25,
-    backgroundColor: "#fff",
+    backgroundColor: "#f5f0e6",
     fontSize: 16,
+    color: "#123458",
   },
   feed: {
     paddingHorizontal: 15,
@@ -285,29 +259,30 @@ const styles = StyleSheet.create({
   },
   pageNumber: {
     marginHorizontal: 10,
+    color: "#D4C9BE",
   },
   reportContainer: {
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderColor: "#ddd",
+    borderColor: "#D4C9BE",
   },
   separator: {
     height: 1,
-    backgroundColor: "#ddd",
+    backgroundColor: "#D4C9BE",
     marginVertical: 10,
   },
   noReportsText: {
     textAlign: "center",
     fontSize: 18,
-    color: "#777",
+    color: "#D4C9BE",
   },
   noTokenText: {
     textAlign: "center",
     fontSize: 18,
-    color: "#ff0000",
+    color: "#ff6666",
   },
   logoutButton: {
-    backgroundColor: "#007bff",
+    backgroundColor: "#123458",
     padding: 10,
     borderRadius: 5,
     marginTop: 10,
@@ -315,7 +290,7 @@ const styles = StyleSheet.create({
   },
   logoutButtonText: {
     textAlign: "center",
-    color: "#fff",
+    color: "#D4C9BE",
     fontSize: 16,
   },
   loadingIndicator: {

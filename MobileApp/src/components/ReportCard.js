@@ -23,6 +23,7 @@ const ReportCard = ({ report, handleShowModal, handleDeleteReport, handleShowMed
     );
   };
 
+  
   // Calculate total media count
   const mediaCount =
     (files?.audios?.length || 0) +
