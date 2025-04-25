@@ -26,6 +26,13 @@
 	<true/>
 	<key>LSMinimumSystemVersion</key>
 	<string>12.0</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+<string>We need access to your photo library for document picking.</string>
+<key>NSCameraUsageDescription</key>
+<string>We need access to your camera for document picking.</string>
+<key>NSMicrophoneUsageDescription</key>
+<string>We need access to your microphone for document picking.</string>
+
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>

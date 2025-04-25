@@ -1,6 +1,6 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import Homepage from '../screens/Homepage';
+import HomeStackNavigator from './HomeStackNavigator';
 import News from '../screens/News';
 import Profile from '../screens/Profile';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,6 +21,8 @@ const BottomTabNavigator = () => {
             iconName = focused ? 'newspaper' : 'newspaper-outline';
           } else if (route.name === 'Profile') {
             iconName = focused ? 'person' : 'person-outline';
+          } else if (route.name === 'AddReport') {
+            iconName = focused ? 'add-circle' : 'add-circle-outline';
           }
 
           return <Ionicons name={iconName} size={size} color={color} />;
@@ -29,7 +31,7 @@ const BottomTabNavigator = () => {
         tabBarInactiveTintColor: 'gray',
       })}
     >
-      <Tab.Screen name="Home" component={Homepage} />
+      <Tab.Screen name="Home" component={HomeStackNavigator} />
       <Tab.Screen name="News" component={News} />
       <Tab.Screen name="Profile" component={Profile} />
     </Tab.Navigator>

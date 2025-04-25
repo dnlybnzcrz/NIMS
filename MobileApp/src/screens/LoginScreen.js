@@ -1,12 +1,12 @@
 import React, { useState, useContext } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image, Switch, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Image, Switch, StyleSheet } from 'react-native';  // Add StyleSheet here
 import Icon from 'react-native-vector-icons/FontAwesome';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { AuthContext } from '../../contexts/AuthContext';  // Ensure this import is correct
+import { AuthContext } from '../../contexts/AuthContext';
 
 const LoginScreen = ({ navigation }) => {
-  const { setUserToken } = useContext(AuthContext);  // Access setUserToken from context
+  const { setUserToken } = useContext(AuthContext);
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -28,23 +28,29 @@ const LoginScreen = ({ navigation }) => {
       );
 
       const userData = response.data;
+      const token = userData.token;
 
-      // Store token and user data in AsyncStorage
-      await AsyncStorage.setItem('user', JSON.stringify(userData));
-      setUserToken(userData.token); // Set token in AuthContext
-
+      // Get additional user details
       const userDetailsResponse = await axios.get(
         'https://api.radiopilipinas.online/login/getDetails',
         {
           headers: {
-            Authorization: `Bearer ${userData.token}`,
+            Authorization: `Bearer ${token}`,
           },
         }
       );
-
       const userDetails = userDetailsResponse.data.userData;
+
+      // Store token and user ID together
+      await AsyncStorage.setItem('user', JSON.stringify({
+        token,
+        id: userDetails.id,
+      }));
+
+      // Optionally store full details too
       await AsyncStorage.setItem('userDetails', JSON.stringify(userDetails));
 
+      setUserToken(token); // Set token in context
       navigation.replace('Home'); // Navigate to Home screen after successful login
     } catch (error) {
       setErrorMessage('Incorrect username or password!');
@@ -92,7 +98,6 @@ const LoginScreen = ({ navigation }) => {
           onValueChange={setRememberMe}
           thumbColor={rememberMe ? '#333' : '#f4f3f4'}
           trackColor={{ false: '#767577', true: '#81b0ff' }}
-          accessibilityLabel="Remember me switch"
         />
         <Text style={styles.rememberMeText}>Remember me</Text>
       </View>
@@ -109,6 +114,7 @@ const LoginScreen = ({ navigation }) => {
     </View>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {

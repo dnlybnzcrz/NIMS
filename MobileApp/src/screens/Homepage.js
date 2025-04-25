@@ -14,12 +14,15 @@ import axios from "axios";
 import moment from "moment";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "../../contexts/AuthContext";
+import { useNavigation } from '@react-navigation/native';
 import StoryModal from "../components/StoryModal";
 import MediaModal from "../components/MediaModal";
 import ReportCard from "../components/ReportCard";
 import ScreenWrapper from "../components/ScreenWrapper";
 
 const Homepage = () => {
+  const navigation = useNavigation();
+
   const [approvedReports, setApprovedReports] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [selectedReport, setSelectedReport] = useState(null);
@@ -196,9 +199,19 @@ const Homepage = () => {
           initialIndex={mediaInitialIndex}
         />
       </Modal>
+
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() => {
+          navigation.navigate('AddReport');
+        }}
+      >
+        <Text style={styles.fabIcon}>+</Text>
+      </TouchableOpacity>
     </ScreenWrapper>
   );
 };
+
 
 const styles = StyleSheet.create({
   searchInput: {
@@ -238,6 +251,27 @@ const styles = StyleSheet.create({
     alignItems: "center",
     height: "100%",
   },
+  fab: {
+    position: "absolute",
+    width: 60,
+    height: 60,
+    alignItems: "center",
+    justifyContent: "center",
+    right: 20,
+    bottom: 30,
+    backgroundColor: "#123458",
+    borderRadius: 30,
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+  },
+  fabIcon: {
+    fontSize: 30,
+    color: "white",
+  },
 });
 
 export default Homepage;
+
