@@ -81,11 +81,7 @@ const StoryScreen = ({ route = {}, navigation }) => {
       </SafeAreaView>
       
       {/* Main Content */}
-      <LinearGradient
-        colors={['#123458', '#D4C9BE', '#123458', '#030303']}
-        locations={[0, 0.33, 0.66, 1]}
-        style={styles.gradientBackground}
-      >
+      <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
         <View style={styles.contentWrapper}>
           <ScrollView contentContainerStyle={styles.content}>
             <TouchableOpacity 
@@ -126,7 +122,7 @@ const StoryScreen = ({ route = {}, navigation }) => {
             {renderImages()}
           </ScrollView>
         </View>
-      </LinearGradient>
+      </View>
 
       {/* Full Image Modal */}
       {fullImageModalVisible && (
@@ -180,7 +176,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     zIndex: 20,
-    padding: 20,
+    padding: 10,
   },
   backButtonText: {
     color: '#123458',
@@ -199,13 +195,8 @@ const styles = StyleSheet.create({
     flex: 1,
     marginHorizontal: 10,
     marginVertical: 15,
-    backgroundColor: "#fefefe",
     borderRadius: 10,
-    shadowColor: "#000",
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 5 },
-    elevation: 10,
+    
     overflow: 'hidden',
   },
   content: {
@@ -259,8 +250,6 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 240,
     backgroundColor: "#ddd",
-    marginVertical: 16,
-    borderRadius: 8,
   },
   image: {
     width: "100%",
