@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import {
   View,
   Text,
@@ -14,39 +14,249 @@ import {
   Keyboard,
   TouchableWithoutFeedback,
   Image,
+  ActivityIndicator,
 } from "react-native";
-import { Video } from "expo-av";
+import { Video } from "expo-av"; // Reverted to expo-av to fix undefined Video component error
+import { Ionicons } from '@expo/vector-icons';
 import axios from "axios";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import ScreenWrapper from "../components/ScreenWrapper";
 
-const AddReport = (props) => {
-  const [selectedAudios, setSelectedAudios] = useState([]);
-  const [selectedImages, setSelectedImages] = useState([]);
-  const [selectedVideos, setSelectedVideos] = useState([]);
-  const [airDate, setAirDate] = useState(new Date());
-  const [tags, setTags] = useState([]);
-  const [selectedTag, setSelectedTag] = useState([]);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [uploadSuccess, setUploadSuccess] = useState(false);
-  const [showTagDropdown, setShowTagDropdown] = useState(false);
-  const [remarks, setRemarks] = useState("");
-  const [title, setTitle] = useState("");
-  const [lead, setLead] = useState("");
-  const [body, setBody] = useState("");
-  const [showDatePicker, setShowDatePicker] = useState(false);
+// 1. Split Component Into Smaller Parts - MediaPreview Component
+const MediaPreview = ({ media, onRemove, onPlayVideo }) => {
+  return (
+    <ScrollView
+      horizontal={true}
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.mediaPreviewContainer}
+      keyboardDismissMode="on-drag"
+      nestedScrollEnabled={true}
+      directionalLockEnabled={true}
+      scrollEnabled={true}
+      contentInsetAdjustmentBehavior="automatic"
+      alwaysBounceHorizontal={true}
+    >
+      {media.map((file, index) => {
+        if (file.uri && file.mimeType?.startsWith("image/")) {
+          return (
+            <View key={file.uri + index} style={[styles.imageWrapper]} pointerEvents="box-none">
+              <Image
+                source={{ uri: file.uri }}
+                style={styles.mediaThumbnail}
+              />
+              <TouchableOpacity
+                style={styles.removeButton}
+                onPress={() => onRemove(file, "image")}
+                pointerEvents="auto"
+              >
+                <Text style={styles.removeButtonText}>×</Text>
+              </TouchableOpacity>
+            </View>
+          );
+        } else if (file.uri && file.mimeType?.startsWith("video/")) {
+          return (
+            <View key={file.uri + index} style={[styles.imageWrapper]} pointerEvents="box-none">
+              <Video
+                source={{ uri: file.uri }}
+                style={styles.videoThumbnail}
+                resizeMode="cover"
+                useNativeControls={false}
+                isLooping={false}
+                isMuted={true}
+                shouldPlay={false}
+              />
+              <TouchableOpacity
+                style={styles.playButton}
+                onPress={() => onPlayVideo(file.uri)}
+                pointerEvents="auto"
+              >
+                <Ionicons name="play-circle" size={40} color="#fff" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.removeButton}
+                onPress={() => onRemove(file, "video")}
+                pointerEvents="auto"
+              >
+                <Text style={styles.removeButtonText}>×</Text>
+              </TouchableOpacity>
+            </View>
+          );
+        } else {
+          // Audio or other files
+          return (
+            <View key={file.uri + index} style={styles.mediaFileContainer}>
+              <Text style={styles.mediaFileName} numberOfLines={1}>
+                {file.name || file.uri.split("/").pop()}
+              </Text>
+              <TouchableOpacity
+                style={styles.removeButtonAudio}
+                onPress={() => onRemove(file, "audio")}
+              >
+                <Text style={styles.removeButtonText}>×</Text>
+              </TouchableOpacity>
+            </View>
+          );
+        }
+      })}
+    </ScrollView>
+  );
+};
 
+// 1. Split Component Into Smaller Parts - TagSelector Component
+const TagSelector = ({ tags, selectedTags, onChange, visible, toggleVisibility }) => {
+  return (
+    <>
+      <TouchableOpacity
+        onPress={toggleVisibility}
+        style={styles.dropdown}
+      >
+        <Text style={styles.dropdownText}>
+          {selectedTags.length > 0
+            ? selectedTags.join(", ")
+            : "Select tags (optional)"}
+        </Text>
+      </TouchableOpacity>
+
+      {visible && (
+        <View style={styles.dropdownList}>
+          <ScrollView>
+            {tags.map((tag) => {
+              const isSelected = selectedTags.includes(tag.name);
+              return (
+                <TouchableOpacity
+                  key={tag.name}
+                  style={styles.dropdownItem}
+                  onPress={() => {
+                    onChange(
+                      isSelected
+                        ? selectedTags.filter((t) => t !== tag.name)
+                        : [...selectedTags, tag.name]
+                    );
+                  }}
+                >
+                  <Text style={[styles.tagText, isSelected && styles.tagSelected]}>
+                    {tag.name}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
+      )}
+    </>
+  );
+};
+
+// 1. Split Component Into Smaller Parts - DateSelector Component
+const DateSelector = ({ date }) => {
+  // Defensive: ensure date is a valid Date object
+  const safeDate = date instanceof Date ? date : new Date();
+
+  return (
+    <>
+      <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 8 }}>
+        <View style={[styles.dateInput, { flex: 1, marginRight: 5 }]}>
+          <Text style={styles.dateText}>{safeDate.toDateString()}</Text>
+        </View>
+        <View style={[styles.dateInput, { flex: 1, marginLeft: 5 }]}>
+          <Text style={styles.dateText}>{safeDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+        </View>
+      </View>
+    </>
+  );
+};
+
+// Main Component
+const AddReport = (props) => {
+  // 1. Optimize State Management - Combine related state into a form object
+  const [formData, setFormData] = useState({
+    title: "",
+    lead: "",
+    body: "",
+    remarks: "",
+    airDate: new Date(),
+    selectedTag: [],
+  });
+  
+  const [media, setMedia] = useState({
+    audio: [],
+    images: [],
+    videos: []
+  });
+  
+  // UI state
+  const [uiState, setUiState] = useState({
+    showTagDropdown: false,
+    showDatePicker: false,
+    uploadProgress: 0,
+    uploadSuccess: false,
+    showVideoModal: false,
+    videoUri: null,
+  });
+  
+  // 3. Add Loading States
+  const [isLoading, setIsLoading] = useState({
+    tags: false,
+    upload: false,
+    mediaSelection: false
+  });
+
+  const [tags, setTags] = useState([]);
   const titleRef = useRef(null);
+
+  // Handler to update form fields
+  const updateFormField = useCallback((field, value) => {
+    setFormData(prev => ({...prev, [field]: value}));
+  }, []);
+  
+  // Toggle UI states
+  const toggleUiState = useCallback((field, value) => {
+    setUiState(prev => ({...prev, [field]: value !== undefined ? value : !prev[field]}));
+  }, []);
+
+  // Play video handler
+  const playVideo = useCallback((uri) => {
+    setUiState(prev => ({...prev, videoUri: uri, showVideoModal: true}));
+  }, []);
+
+  // Close video modal handler
+  const closeVideoModal = useCallback(() => {
+    setUiState(prev => ({...prev, showVideoModal: false, videoUri: null}));
+  }, []);
+
+  // 2. Memoize Expensive Calculations - Combine all media for display
+  const allMedia = useMemo(() => {
+    return [...media.images, ...media.videos, ...media.audio];
+  }, [media]);
+
+  // Handle media removal
+  const handleMediaRemove = useCallback((file, type) => {
+    setMedia(prev => ({
+      ...prev,
+      [type === "image" ? "images" : type === "video" ? "videos" : "audio"]: 
+        prev[type === "image" ? "images" : type === "video" ? "videos" : "audio"].filter(
+          item => item.uri !== file.uri
+        )
+    }));
+  }, []);
 
   useEffect(() => {
     const fetchTags = async () => {
+      // 3. Add Loading States
+      setIsLoading(prev => ({...prev, tags: true}));
+      
       try {
-        const token = JSON.parse(await AsyncStorage.getItem("user")).token;
+        const user = JSON.parse(await AsyncStorage.getItem("user"));
+        if (!user || !user.token) {
+          Alert.alert("Authentication Error", "Please log in again.");
+          // Redirect to login
+          return;
+        }
+        
         const config = {
-          headers: { Authorization: "Bearer " + token },
+          headers: { Authorization: "Bearer " + user.token },
         };
         const response = await axios.get(
           "https://api.radiopilipinas.online/nims/tags/view",
@@ -54,17 +264,89 @@ const AddReport = (props) => {
         );
         setTags(response.data.tagsList || []);
       } catch (error) {
+        // 1. Improve Error Handling
+        if (error.response && error.response.status === 401) {
+          Alert.alert("Session Expired", "Please log in again to continue.");
+          AsyncStorage.removeItem("user");
+          // Redirect to login
+        } else {
+          Alert.alert(
+            "Error Loading Tags", 
+            "Unable to load tags. Please check your connection and try again."
+          );
+        }
         console.error("Error fetching tags:", error);
+      } finally {
+        setIsLoading(prev => ({...prev, tags: false}));
       }
     };
+    
     fetchTags();
+    
+    // 3. Form Saving - Load draft on component mount
+    loadDraft();
   }, []);
+  
+  // 3. Form Saving - Load draft implementation
+  const loadDraft = async () => {
+    try {
+      const draft = await AsyncStorage.getItem('draft-report');
+      if (draft) {
+        const parsedDraft = JSON.parse(draft);
+        Alert.alert(
+          "Restore Draft",
+          "Would you like to restore your previous draft?",
+          [
+            { text: "No", style: "cancel", onPress: () => AsyncStorage.removeItem('draft-report') },
+            { text: "Yes", onPress: () => {
+              setFormData(parsedDraft.formData || formData);
+              setMedia(parsedDraft.media || media);
+            }}
+          ]
+        );
+      }
+    } catch (error) {
+      console.error("Error loading draft:", error);
+    }
+  };
+  
+  // 3. Form Saving - Save draft periodically
+  useEffect(() => {
+    // Only save if there's actual content
+    if (formData.title || formData.lead || formData.body || allMedia.length > 0) {
+      const saveData = async () => {
+        try {
+          await AsyncStorage.setItem('draft-report', JSON.stringify({
+            formData,
+            media
+          }));
+        } catch (error) {
+          console.error("Error saving draft:", error);
+        }
+      };
+      saveData();
+    }
+    
+    // Set up auto-save interval
+    const autoSaveInterval = setInterval(() => {
+      if (formData.title || formData.lead || formData.body || allMedia.length > 0) {
+        AsyncStorage.setItem('draft-report', JSON.stringify({
+          formData,
+          media
+        }));
+      }
+    }, 60000); // Save every minute
+    
+    return () => clearInterval(autoSaveInterval);
+  }, [formData, media, allMedia]);
 
   const differenceInHours = (date1, date2) =>
     (date1.getTime() - date2.getTime()) / (1000 * 60 * 60);
 
   const fileSelectedHandler = async () => {
     try {
+      setIsLoading(prev => ({...prev, mediaSelection: true}));
+      
       // Request media library permissions
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== "granted") {
@@ -74,122 +356,270 @@ const AddReport = (props) => {
 
       // Launch image library to pick media
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.All,
+        mediaTypes: ImagePicker.MediaTypeOptions.All, // FIXED: Use enum instead of string array
         allowsMultipleSelection: true,
         quality: 1,
       });
 
-      if (result.canceled) return;
+      if (result.canceled) {
+        setIsLoading(prev => ({...prev, mediaSelection: false}));
+        return;
+      }
 
       const selectedFiles = result.assets || [];
+      // Prepare new media arrays
+      let newAudio = [];
+      let newImages = [];
+      let newVideos = [];
 
       const isDuplicate = (list, uri) => list.some((f) => f.uri === uri);
 
+      // Process selected files by type
       selectedFiles.forEach((file) => {
-        if (file.type === "audio" && !isDuplicate(selectedAudios, file.uri)) {
-          setSelectedAudios((prev) => [...prev, file]);
-        } else if (file.type === "image" && !isDuplicate(selectedImages, file.uri)) {
-          setSelectedImages((prev) => [...prev, file]);
-        } else if (file.type === "video" && !isDuplicate(selectedVideos, file.uri)) {
-          setSelectedVideos((prev) => [...prev, file]);
+        // Determine file type from mime type or uri extension
+        let fileType = "audio"; // Default
+        
+        if (file.type) {
+          // If file.type is already set, use it
+          fileType = file.type;
+        } else {
+          // Determine type from uri or mime type
+          const uri = file.uri.toLowerCase();
+          const mimeType = file.mimeType?.toLowerCase() || "";
+          
+          if (mimeType.startsWith("image/") || uri.match(/\.(jpg|jpeg|png|gif|webp|heic)$/i)) {
+            fileType = "image";
+          } else if (mimeType.startsWith("video/") || uri.match(/\.(mp4|mov|avi|wmv|flv|mkv)$/i)) {
+            fileType = "video";
+          } else if (mimeType.startsWith("audio/") || uri.match(/\.(mp3|wav|ogg|m4a|aac)$/i)) {
+            fileType = "audio";
+          }
+        }
+        
+        // Set mime type if it's not already set
+        if (!file.mimeType) {
+          if (fileType === "video") {
+            file.mimeType = file.uri.toLowerCase().endsWith("mov") ? "video/quicktime" : "video/mp4";
+          } else if (fileType === "image") {
+            file.mimeType = "image/jpeg"; // Default image type
+          } else {
+            file.mimeType = "audio/mpeg"; // Default audio type
+          }
+        }
+        
+        if (fileType === "audio" && !isDuplicate(media.audio, file.uri)) {
+          newAudio.push(file);
+        } else if (fileType === "image" && !isDuplicate(media.images, file.uri)) {
+          newImages.push(file);
+        } else if (fileType === "video" && !isDuplicate(media.videos, file.uri)) {
+          newVideos.push(file);
         }
       });
+
+      // Batch update media state
+      setMedia(prev => ({
+        audio: [...prev.audio, ...newAudio],
+        images: [...prev.images, ...newImages],
+        videos: [...prev.videos, ...newVideos],
+      }));
+
+      console.log("Selected media:", {
+        audio: [...media.audio, ...newAudio],
+        images: [...media.images, ...newImages],
+        videos: [...media.videos, ...newVideos],
+      });
     } catch (err) {
+      // 1. Improve Error Handling
+      Alert.alert(
+        "Media Selection Failed", 
+        "There was a problem selecting media files. Please try again."
+      );
       console.error("File selection error:", err);
+    } finally {
+      setIsLoading(prev => ({...prev, mediaSelection: false}));
     }
   };
 
-const fileUploadHandler = async () => {
-    if (!title.trim() || !lead.trim() || !body.trim()) {
-      Alert.alert("Missing Fields", "Please fill in Headline, Lead, and Story before uploading.");
-      return;
-    }
-
+  const validateForm = () => {
+    const { title, lead, body, airDate } = formData;
+    const errors = {};
+    
+    if (!title.trim()) errors.title = "Headline is required";
+    if (!lead.trim()) errors.lead = "Lead is required";
+    if (!body.trim()) errors.body = "Story is required";
+    
+    // Date validation
     const now = new Date();
     const isSameDay =
       airDate.getFullYear() === now.getFullYear() &&
       airDate.getMonth() === now.getMonth() &&
       airDate.getDate() === now.getDate();
-
+    
     if (!isSameDay && differenceInHours(airDate, now) < 0) {
-      Alert.alert("Invalid Date", "Air date must be today or in the future.");
+      errors.date = "Air date must be today or in the future";
+    }
+    
+    return {
+      isValid: Object.keys(errors).length === 0,
+      errors
+    };
+  };
+
+  const fileUploadHandler = async () => {
+    // Validate form
+    const { isValid, errors } = validateForm();
+    if (!isValid) {
+      const errorMessages = Object.values(errors).join('\n');
+      Alert.alert("Form Validation Failed", errorMessages);
       return;
     }
 
+    // Start upload process
     try {
+      setIsLoading(prev => ({...prev, upload: true}));
+      toggleUiState("uploadProgress", 0);
+      
       const user = JSON.parse(await AsyncStorage.getItem("user"));
+      if (!user || !user.token) {
+        Alert.alert("Authentication Error", "Please log in again.");
+        // Redirect to login
+        return;
+      }
+      
       const config = {
         headers: {
           "Content-Type": "multipart/form-data",
           Authorization: "Bearer " + user.token,
         },
-        onUploadProgress: (progressEvent) =>
-          setUploadProgress(
-            Math.round((progressEvent.loaded / progressEvent.total) * 100)
-          ),
+        onUploadProgress: (progressEvent) => {
+          const progress = Math.round((progressEvent.loaded / progressEvent.total) * 100);
+          toggleUiState("uploadProgress", progress);
+        },
       };
 
       const fd = new FormData();
-      fd.append("title", title);
-      fd.append("tags", selectedTag.join(", "));
-      fd.append("lead", lead);
-      fd.append("body", body);
+      fd.append("title", formData.title.trim());
+      fd.append("tags", formData.selectedTag.join(", "));
+      fd.append("lead", formData.lead.trim());
+      fd.append("body", formData.body.trim());
       fd.append("userId", user.id);
-      fd.append("forDate", airDate.toISOString().split("T")[0]);
-      fd.append("remarks", remarks);
+      fd.append("forDate", formData.airDate.toISOString());
+      fd.append("remarks", formData.remarks.trim());
 
-      [...selectedAudios, ...selectedImages, ...selectedVideos].forEach(
-        (file, index) => {
-          let mimeType = file.mimeType;
-          let fileName = file.name;
-          if (!mimeType) {
-            if (file.uri.endsWith(".mp4")) mimeType = "video/mp4";
-            else if (file.uri.endsWith(".mov")) mimeType = "video/quicktime";
-            else mimeType = "*/*";
-          }
-          if (!fileName) {
-            const uriParts = file.uri.split("/");
-            fileName = uriParts[uriParts.length - 1] || `file${index}`;
-          }
-          fd.append("media", {
-            uri: file.uri,
-            type: mimeType,
-            name: fileName,
-          });
+      // Add all media files
+      allMedia.forEach((file, index) => {
+        let mimeType = file.mimeType;
+        let fileName = file.name;
+        if (!mimeType) {
+          if (file.uri.endsWith(".mp4")) mimeType = "video/mp4";
+          else if (file.uri.endsWith(".mov")) mimeType = "video/quicktime";
+          else mimeType = "*/*";
         }
-      );
+        if (!fileName) {
+          const uriParts = file.uri.split("/");
+          fileName = uriParts[uriParts.length - 1] || `file${index}`;
+        }
+        // Ensure uri has file:// prefix for local files (especially videos)
+        let fileUri = file.uri;
+        if (Platform.OS !== "web" && !fileUri.startsWith("file://")) {
+          fileUri = "file://" + fileUri;
+        }
+        fd.append("media", {
+          uri: fileUri,
+          type: mimeType,
+          name: fileName,
+        });
+      });
 
       const res = await axios.post(
         "https://api.radiopilipinas.online/nims/add",
         fd,
         config
       );
-      setUploadSuccess(true);
+      
+      toggleUiState("uploadSuccess", true);
+      toggleUiState("uploadProgress", 0);
       props.updateReports?.(res.data);
+      
+      // Clear draft after successful upload
+      AsyncStorage.removeItem('draft-report');
     } catch (err) {
-      console.error(err);
-      Alert.alert("Upload Failed", "Error uploading the report.");
+      // 1. Improve Error Handling
+      if (err.response) {
+        // Server responded with an error status code
+        const errorMessage = err.response.data?.message || "Server returned an error.";
+        Alert.alert("Upload Failed", `Error: ${errorMessage}`);
+        
+        // Handle token expiration
+        if (err.response.status === 401) {
+          Alert.alert("Session Expired", "Please log in again.");
+          AsyncStorage.removeItem("user");
+          // Redirect to login
+        }
+      } else if (err.request) {
+        // Request was made but no response received
+        Alert.alert("Network Error", "Cannot connect to server. Check your internet connection.");
+      } else {
+        // Error in request setup
+        Alert.alert("Upload Failed", "An unexpected error occurred.");
+      }
+      console.error("Upload error:", err);
+    } finally {
+      setIsLoading(prev => ({...prev, upload: false}));
     }
   };
 
   useEffect(() => {
-    if (uploadSuccess) {
-      setTitle("");
-      setSelectedTag([]);
-      setLead("");
-      setBody("");
-      setRemarks("");
-      setSelectedAudios([]);
-      setSelectedImages([]);
-      setSelectedVideos([]);
-      setAirDate(new Date());
+    if (uiState.uploadSuccess) {
+      // Reset form after successful upload
+      setFormData({
+        title: "",
+        lead: "",
+        body: "",
+        remarks: "",
+        airDate: new Date(),
+        selectedTag: [],
+      });
+      setMedia({
+        audio: [],
+        images: [],
+        videos: []
+      });
     }
-  }, [uploadSuccess]);
+  }, [uiState.uploadSuccess]);
 
-  const onChangeDate = (_, selectedDate) => {
-    setShowDatePicker(Platform.OS === "ios");
-    if (selectedDate) setAirDate(selectedDate);
-  };
+  // ADDED: Video Modal component
+  const VideoPlayerModal = useCallback(() => {
+    if (!uiState.videoUri) return null;
+    
+    return (
+      <Modal
+        transparent
+        visible={uiState.showVideoModal}
+        animationType="fade"
+        onRequestClose={closeVideoModal}
+      >
+        <View style={styles.videoModalOverlay}>
+          <View style={styles.videoModalContent}>
+              <Video
+                source={{ uri: uiState.videoUri }}
+                style={styles.videoPlayer}
+                resizeMode="contain"
+                useNativeControls={true}
+                isLooping={false}
+                shouldPlay={true}
+              />
+            <TouchableOpacity 
+              style={styles.closeVideoButton}
+              onPress={closeVideoModal}
+            >
+              <Text style={styles.closeVideoButtonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    );
+  }, [uiState.videoUri, uiState.showVideoModal, closeVideoModal]);
 
   return (
     <ScreenWrapper>
@@ -199,291 +629,315 @@ const fileUploadHandler = async () => {
         keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
       >
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <View style={styles.backgroundContainer}>
-<ScrollView contentContainerStyle={[styles.container, { paddingBottom: 10 }]} style={{ flexGrow: 1 }} keyboardDismissMode="on-drag">
-              <Text style={styles.heading}>NEW REPORT</Text>
+          <ScrollView style={styles.fullScreenContainer} keyboardShouldPersistTaps="handled">
+            <Text style={styles.heading}>NEW REPORT</Text>
 
-              <TextInput
-                ref={titleRef}
-                placeholder="Headline"
-                placeholderTextColor="#475569"
-                style={styles.input}
-                value={title}
-                onChangeText={setTitle}
-                multiline={true}
-              />
+            <TextInput
+              ref={titleRef}
+              placeholder="Headline"
+              placeholderTextColor="#6b7280"
+              style={styles.input}
+              value={formData.title}
+              onChangeText={(text) => updateFormField("title", text)}
+              multiline={true}
+            />
 
-              <TouchableOpacity
-                onPress={() => setShowTagDropdown(!showTagDropdown)}
-                style={styles.dropdown}
-              >
-                <Text style={styles.dropdownText}>
-                  {selectedTag.length > 0
-                    ? selectedTag.join(", ")
-                    : "Select tags (optional)"}
-                </Text>
-              </TouchableOpacity>
+            {/* 1. Split Component Into Smaller Parts - Using TagSelector */}
+            <TagSelector 
+              tags={tags}
+              selectedTags={formData.selectedTag}
+              onChange={(newTags) => updateFormField("selectedTag", newTags)}
+              visible={uiState.showTagDropdown}
+              toggleVisibility={() => toggleUiState("showTagDropdown")}
+            />
 
-              {showTagDropdown && (
-                <View style={styles.dropdownList}>
-                  <ScrollView>
-                    {tags.map((tag) => {
-                      const isSelected = selectedTag.includes(tag.name);
-                      return (
-                        <TouchableOpacity
-                          key={tag.name}
-                          style={styles.dropdownItem}
-                          onPress={() => {
-                            setSelectedTag((prev) =>
-                              isSelected
-                                ? prev.filter((t) => t !== tag.name)
-                                : [...prev, tag.name]
-                            );
-                          }}
-                        >
-                          <Text style={[styles.tagText, isSelected && styles.tagSelected]}>
-                            {tag.name}
-                          </Text>
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </ScrollView>
+            {/* 1. Split Component Into Smaller Parts - Using DateSelector */}
+            <DateSelector 
+              date={formData.airDate}
+              onChange={(newDate) => updateFormField("airDate", newDate)}
+              visible={uiState.showDatePicker}
+              toggleVisibility={(value) => toggleUiState("showDatePicker", value)}
+            />
+
+            <TextInput
+              placeholder="Lead"
+              placeholderTextColor="#6b7280"
+              style={styles.input}
+              value={formData.lead}
+              onChangeText={(text) => updateFormField("lead", text)}
+              multiline
+            />
+            <TextInput
+              placeholder="Story"
+              placeholderTextColor="#6b7280"
+              style={[styles.input, { height: 150 }]}
+              value={formData.body}
+              onChangeText={(text) => updateFormField("body", text)}
+              multiline
+            />
+            <TextInput
+              placeholder="Remarks (optional)"
+              placeholderTextColor="#6b7280"
+              style={styles.input}
+              value={formData.remarks}
+              onChangeText={(text) => updateFormField("remarks", text)}
+            />
+
+            {/* 1. Split Component Into Smaller Parts - Using MediaPreview */}
+            <MediaPreview 
+              media={allMedia} 
+              onRemove={handleMediaRemove} 
+              onPlayVideo={playVideo} // FIXED: Added missing playVideo prop
+            />
+
+            <TouchableOpacity 
+              style={styles.button} 
+              onPress={fileSelectedHandler}
+              disabled={isLoading.mediaSelection}
+            >
+              <Text style={styles.buttonText}>
+                {isLoading.mediaSelection ? "Uploading..." : "Choose Media Files"}
+              </Text>
+            </TouchableOpacity>
+
+            {uiState.uploadProgress > 0 && (
+              <Text style={styles.progressText}>Uploading: {uiState.uploadProgress}%</Text>
+            )}
+
+            <Modal
+              transparent
+              visible={uiState.uploadProgress > 0 && uiState.uploadProgress < 100}
+              animationType="fade"
+              onRequestClose={() => {}}
+            >
+              <View style={styles.modalOverlay}>
+                <View style={styles.modalContent}>
+                  <ActivityIndicator size="large" color="#2563eb" style={{ marginBottom: 20 }} />
+                  <Text style={styles.modalText}>Uploading media... {uiState.uploadProgress}%</Text>
                 </View>
-              )}
+              </View>
+            </Modal>
 
-              <TouchableOpacity
-                onPress={() => setShowDatePicker(true)}
-                style={styles.input}
-              >
-                <Text>{airDate.toDateString()}</Text>
-              </TouchableOpacity>
-              {showDatePicker && (
-                <DateTimePicker
-                  value={airDate}
-                  mode="date"
-                  display="default"
-                  onChange={onChangeDate}
-                  minimumDate={new Date()}
-                />
-              )}
-
-              <TextInput
-                placeholder="Lead"
-                placeholderTextColor="#475569"
-                style={styles.input}
-                value={lead}
-                onChangeText={setLead}
-                multiline
-              />
-              <TextInput
-                placeholder="Story"
-                placeholderTextColor="#475569"
-                style={[styles.input, { height: 200 }]}
-                value={body}
-                onChangeText={setBody}
-                multiline
-              />
-              <TextInput
-                placeholder="Remarks (optional)"
-                placeholderTextColor="#475569"
-                style={styles.input}
-                value={remarks}
-                onChangeText={setRemarks}
-              />
-
-              {/* Display selected media */}
-              <ScrollView
-                horizontal={true}
-                showsHorizontalScrollIndicator={true}
-                contentContainerStyle={styles.mediaPreviewContainer}
-                keyboardDismissMode="on-drag"
-                nestedScrollEnabled={true}
-                directionalLockEnabled={true}
-                scrollEnabled={true}
-                contentInsetAdjustmentBehavior="automatic"
-                alwaysBounceHorizontal={true}
-              >
-                {[...selectedImages, ...selectedVideos, ...selectedAudios].map((file, index) => {
-                  if (file.uri && file.mimeType?.startsWith("image/")) {
-                    return (
-                      <View key={file.uri + index} style={[styles.imageWrapper]} pointerEvents="box-none">
-                        <Image
-                          source={{ uri: file.uri }}
-                          style={styles.mediaThumbnail}
-                        />
-                        <TouchableOpacity
-                          style={styles.removeButton}
-                          onPress={() => {
-                            setSelectedImages((prev) =>
-                              prev.filter((img) => img.uri !== file.uri)
-                            );
-                          }}
-                          pointerEvents="auto"
-                        >
-                          <Text style={styles.removeButtonText}>×</Text>
-                        </TouchableOpacity>
-                      </View>
-                    );
-                  } else if (file.uri && file.mimeType?.startsWith("video/")) {
-                    return (
-                      <View key={file.uri + index} style={[styles.imageWrapper]} pointerEvents="box-none">
-                        <Video
-                          source={{ uri: file.uri }}
-                          style={styles.videoThumbnail}
-                          resizeMode="cover"
-                          useNativeControls={false}
-                          isLooping={false}
-                          isMuted={true}
-                          shouldPlay={false}
-                        />
-                        <TouchableOpacity
-                          style={styles.removeButton}
-                          onPress={() => {
-                            setSelectedVideos((prev) =>
-                              prev.filter((vid) => vid.uri !== file.uri)
-                            );
-                          }}
-                          pointerEvents="auto"
-                        >
-                          <Text style={styles.removeButtonText}>×</Text>
-                        </TouchableOpacity>
-                      </View>
-                    );
-                  } else {
-                    return (
-                      <View key={file.uri + index} style={styles.mediaFileContainer}>
-                        <Text style={styles.mediaFileName} numberOfLines={1}>
-                          {file.name || file.uri.split("/").pop()}
-                        </Text>
-                      </View>
-                    );
-                  }
-                })}
-              </ScrollView>
-
-              <TouchableOpacity style={styles.button} onPress={fileSelectedHandler}>
-                <Text style={styles.buttonText}>Choose Media Files</Text>
-              </TouchableOpacity>
-
-              {uploadProgress > 0 && (
-                <Text style={styles.progressText}>Uploading: {uploadProgress}%</Text>
-              )}
-
-              <TouchableOpacity style={styles.button} onPress={fileUploadHandler}>
-                <Text style={styles.buttonText}>Upload Report</Text>
-              </TouchableOpacity>
-            </ScrollView>
-          </View>
+            <TouchableOpacity 
+              style={[
+                styles.button, 
+                isLoading.upload && styles.buttonDisabled
+              ]} 
+              onPress={fileUploadHandler}
+              disabled={isLoading.upload}
+            >
+              <Text style={styles.buttonText}>
+                {isLoading.upload ? "Uploading..." : "Upload Report"}
+              </Text>
+            </TouchableOpacity>
+            
+            {/* Draft saved indicator */}
+            {(formData.title || formData.lead || formData.body) && (
+              <Text style={styles.draftSavedText}>Draft saved automatically</Text>
+            )}
+          </ScrollView>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
 
+      {/* Success Modal */}
       <Modal
         transparent
-        visible={uploadSuccess}
+        visible={uiState.uploadSuccess}
         animationType="fade"
-        onRequestClose={() => setUploadSuccess(false)}
+        onRequestClose={() => toggleUiState("uploadSuccess", false)}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalText}>
               News uploaded successfully. Waiting for approval.
             </Text>
-            <Button title="Close" onPress={() => setUploadSuccess(false)} />
+            <Button title="Close" onPress={() => toggleUiState("uploadSuccess", false)} />
           </View>
         </View>
       </Modal>
+
+      {/* ADDED: Video Player Modal */}
+      <VideoPlayerModal />
     </ScreenWrapper>
   );
 };
 
 const styles = StyleSheet.create({
-  backgroundContainer: {
-    backgroundColor: "#f1efec",
+  fullScreenContainer: {
+    flex: 1,
     paddingHorizontal: 20,
-    paddingVertical: 24,
-    borderRadius: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 4,
-    marginHorizontal: 20,
-    marginTop: 20,
-    marginBottom: 20,
-  },
-  container: {
-    paddingBottom: 40,
+    paddingTop: 20,
   },
   heading: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: "700",
-    color: "#0f172a",
-    marginBottom: 24,
+    color: "white",
+    marginBottom: 20,
     textAlign: "center",
+    letterSpacing: 1,
   },
   input: {
-    backgroundColor: "#f9fafb",
-    borderColor: "#e2e8f0",
+    backgroundColor: "#f3f4f6",
+    borderColor: "#cbd5e1",
     borderWidth: 1,
-    borderRadius: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    fontSize: 15,
-    marginBottom: 14,
-    color: "#0f172a",
-  },
-  button: {
-    backgroundColor: "#1a3357",
-    borderRadius: 10,
+    borderRadius: 8,
     paddingVertical: 14,
-    marginTop: 10,
-    marginBottom: 6,
-    alignItems: "center",
-  },
-  buttonText: {
-    color: "#ffffff",
+    paddingHorizontal: 18,
     fontSize: 16,
-    fontWeight: "600",
+    marginBottom: 18,
+    color: "#1e293b",
+    fontWeight: "500",
   },
-  progressText: {
-    textAlign: "center",
-    marginTop: 8,
-    color: "#64748b",
-    fontSize: 14,
+  dateInput: {
+    backgroundColor: "#f3f4f6",
+    borderColor: "#cbd5e1",
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    marginBottom: 18,
+  },
+  dateText: {
+    fontSize: 16,
+    color: "#1e293b",
+    fontWeight: "500",
   },
   dropdown: {
-    backgroundColor: "#f9fafb",
-    borderColor: "#e2e8f0",
+    backgroundColor: "#f3f4f6",
+    borderColor: "#cbd5e1",
     borderWidth: 1,
-    borderRadius: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    marginBottom: 14,
+    borderRadius: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    marginBottom: 18,
   },
   dropdownText: {
-    fontSize: 15,
+    fontSize: 16,
     color: "#475569",
   },
   dropdownList: {
     backgroundColor: "#ffffff",
-    borderRadius: 10,
-    borderColor: "#e2e8f0",
+    borderRadius: 8,
+    borderColor: "#cbd5e1",
     borderWidth: 1,
     maxHeight: 160,
-    marginBottom: 14,
-    paddingVertical: 4,
+    marginBottom: 18,
+    paddingVertical: 6,
   },
   dropdownItem: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 18,
   },
   tagText: {
-    fontSize: 15,
+    fontSize: 16,
     color: "#334155",
   },
   tagSelected: {
-    fontWeight: "600",
-    color: "#1d4ed8",
+    fontWeight: "700",
+    color: "#2563eb",
+  },
+  mediaPreviewContainer: {
+    flexDirection: "row",
+    marginBottom: 16,
+  },
+  mediaThumbnail: {
+    width: 140,
+    height: 140,
+    borderRadius: 10,
+    marginRight: 12,
+  },
+  mediaFileContainer: {
+    width: 140,
+    height: 140,
+    borderRadius: 10,
+    backgroundColor: "#e2e8f0",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+    paddingHorizontal: 8,
+    position: "relative",
+  },
+  mediaFileName: {
+    fontSize: 14,
+    color: "#475569",
+    maxWidth: "80%",
+    textAlign: "center",
+  },
+  imageWrapper: {
+    position: "relative",
+    marginRight: 12,
+  },
+  removeButton: {
+    position: "absolute",
+    top: 4,
+    right: 4,
+    backgroundColor: "#ef4444",
+    borderRadius: 14,
+    width: 28,
+    height: 28,
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 10,
+  },
+  removeButtonAudio: {
+    position: "absolute",
+    top: 4,
+    right: 4,
+    backgroundColor: "#ef4444",
+    borderRadius: 14,
+    width: 28,
+    height: 28,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  removeButtonText: {
+    color: "#fff",
+    fontSize: 20,
+    lineHeight: 20,
+    fontWeight: "bold",
+  },
+  videoThumbnail: {
+    width: 140,
+    height: 140,
+    borderRadius: 10,
+    marginRight: 12,
+    backgroundColor: "#000",
+  },
+  playButton: {
+    position: "absolute",
+    top: "50%",
+    left: "50%",
+    transform: [{ translateX: -20 }, { translateY: -20 }],
+    zIndex: 5,
+  },
+
+  button: {
+    backgroundColor: "#2563eb",
+    borderRadius: 10,
+    paddingVertical: 16,
+    marginTop: 12,
+    marginBottom: 8,
+    alignItems: "center",
+    shadowColor: "#2563eb",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  buttonDisabled: {
+    backgroundColor: "#93c5fd",
+    shadowOpacity: 0.2,
+  },
+  buttonText: {
+    color: "#ffffff",
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  progressText: {
+    textAlign: "center",
+    marginTop: 10,
+    color: "#64748b",
+    fontSize: 15,
   },
   modalOverlay: {
     flex: 1,
@@ -493,87 +947,31 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: "#ffffff",
-    padding: 24,
+    padding: 28,
     borderRadius: 16,
     alignItems: "center",
     width: "85%",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 10,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 12,
   },
   modalText: {
-    fontSize: 16,
-    color: "#334155",
-    marginBottom: 16,
-    textAlign: "center",
-  },
-  mediaPreviewContainer: {
-    flexDirection: "row",
-    marginBottom: 10,
-    
-  },
-  mediaThumbnail: {
-    width: 150,
-    height: 150,
-    borderRadius: 8,
-    marginRight: 10,
-  },
-  mediaFileContainer: {
-    width: 150,
-    height: 150,
-    borderRadius: 8,
-    backgroundColor: "#e2e8f0",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 10,
-    paddingHorizontal: 5,
-  },
-  mediaFileName: {
-    fontSize: 12,
-    color: "#475569",
-  },
-  videoFileName: {
-    fontSize: 14,
-    color: "#334155",
-    backgroundColor: "#e2e8f0",
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 20,
-    width: 80,
-    textAlign: "center",
-    marginRight: 10,
-  },
-  imageWrapper: {
-    position: "relative",
-    marginRight: 10,
-  },
-  removeButton: {
-    position: "absolute",
-    top: 0,
-    right: 0,
-    backgroundColor: "#ff0000",
-    borderRadius: 12,
-    width: 24,
-    height: 24,
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 10,
-  },
-  removeButtonText: {
-    color: "#fff",
     fontSize: 18,
-    lineHeight: 18,
-    fontWeight: "bold",
+    color: "#334155",
+    marginBottom: 20,
+    textAlign: "center",
+    fontWeight: "600",
   },
-  videoThumbnail: {
-    width: 150,
-    height: 150,
-    borderRadius: 8,
-    marginRight: 10,
-    backgroundColor: "#000",
-  },
+  draftSavedText: {
+    textAlign: "center",
+    color: "#64748b",
+    fontSize: 14,
+    marginTop: 8,
+    marginBottom: 16,
+    fontStyle: "italic",
+  }
 });
 
 export default AddReport;

@@ -1,5 +1,6 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import HomeStackNavigator from './HomeStackNavigator';
 import News from '../screens/News';
 import Profile from '../screens/Profile';
@@ -31,7 +32,17 @@ const BottomTabNavigator = () => {
         tabBarInactiveTintColor: 'gray',
       })}
     >
-      <Tab.Screen name="Home" component={HomeStackNavigator} />
+      <Tab.Screen 
+        name="Home" 
+        component={HomeStackNavigator} 
+        options={({ route }) => {
+          const routeName = getFocusedRouteNameFromRoute(route) ?? '';
+
+          return {
+            tabBarStyle: routeName === 'StoryScreen' ? { display: 'none' } : {},
+          };
+        }}
+      />
       <Tab.Screen name="News" component={News} />
       <Tab.Screen name="Profile" component={Profile} />
     </Tab.Navigator>

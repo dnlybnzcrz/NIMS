@@ -31,6 +31,8 @@ const ReportCard = ({ report, handleShowModal, handleDeleteReport, handleShowMed
 
   const S3_BASE_URL = "https://pbs-nims.s3.ap-southeast-1.amazonaws.com";
 
+  console.log("ReportCard dateCreated:", dateCreated);
+
   return (
     <TouchableOpacity
       onPress={() => handleShowModal(report)}
@@ -71,7 +73,7 @@ const ReportCard = ({ report, handleShowModal, handleDeleteReport, handleShowMed
           <Text style={styles.tags} numberOfLines={1} ellipsizeMode="tail">
             {tags && Array.isArray(tags) && tags.length > 0 ? tags.join(", ") : "No tags selected"}
           </Text>
-          <Text style={styles.date}>{dateCreated ? moment(dateCreated).format("MM/DD/YYYY, h:mm:ss a") : "N/A"}</Text>
+          <Text style={styles.date}>{dateCreated && moment(dateCreated).isValid() ? moment(dateCreated).format("MM/DD/YYYY, h:mm:ss a") : "N/A"}</Text>
         </View>
       </View>
     </TouchableOpacity>

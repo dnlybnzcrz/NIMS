@@ -15,7 +15,6 @@ import moment from "moment";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "../../contexts/AuthContext";
 import { useNavigation } from '@react-navigation/native';
-import StoryModal from "../components/StoryModal";
 import MediaModal from "../components/MediaModal";
 import ReportCard from "../components/ReportCard";
 import ScreenWrapper from "../components/ScreenWrapper";
@@ -24,8 +23,9 @@ const Homepage = () => {
   const navigation = useNavigation();
 
   const [approvedReports, setApprovedReports] = useState([]);
-  const [showModal, setShowModal] = useState(false);
-  const [selectedReport, setSelectedReport] = useState(null);
+  // Removed modal state variables as we will navigate to StoryScreen instead
+  // const [showModal, setShowModal] = useState(false);
+  // const [selectedReport, setSelectedReport] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [showMediaModal, setShowMediaModal] = useState(false);
   const [mediaUrls, setMediaUrls] = useState([]);
@@ -55,7 +55,12 @@ const Homepage = () => {
       .get("https://api.radiopilipinas.online/nims/view", config)
       .then((res) => {
         const filtered = res.data.newsDataList.filter((r) => r.approved === true);
-        setApprovedReports(filtered);
+        // Map forDate or other date field to dateCreated for consistency
+        const mapped = filtered.map((report) => ({
+          ...report,
+          dateCreated: report.dateCreated || report.forDate || report.createdAt || null,
+        }));
+        setApprovedReports(mapped);
       })
       .catch((err) => {
         console.error(err);
@@ -65,14 +70,15 @@ const Homepage = () => {
   };
 
   const handleShowModal = (report) => {
-    setSelectedReport(report);
-    setShowModal(true);
+    // Navigate to StoryScreen with report and searchQuery as params
+    navigation.navigate('StoryScreen', { newsItem: report, searchQuery });
   };
 
-  const handleCloseModal = () => {
-    setShowModal(false);
-    setSelectedReport(null);
-  };
+  // Removed handleCloseModal as modal is removed
+  // const handleCloseModal = () => {
+  //   setShowModal(false);
+  //   setSelectedReport(null);
+  // };
 
   const S3_BASE_URL = "https://pbs-nims.s3.ap-southeast-1.amazonaws.com";
 
@@ -99,7 +105,9 @@ const Homepage = () => {
     setMediaInitialIndex(0);
   };
 
-  const filteredReports = useMemo(() => {
+  const [postsToRender, setPostsToRender] = useState(10);
+
+  const allFilteredReports = useMemo(() => {
     return approvedReports.filter((report) => {
       const { author, lead, tags, dateCreated } = report;
       const formattedDate = moment(dateCreated).format("MM/DD/YYYY, h:mm:ss a");
@@ -120,6 +128,10 @@ const Homepage = () => {
       );
     });
   }, [approvedReports, searchQuery]);
+
+  const filteredReports = useMemo(() => {
+    return allFilteredReports.slice(0, postsToRender);
+  }, [allFilteredReports, postsToRender]);
 
   const handleDeleteReport = (reportId) => {
     Alert.alert("Confirm Delete", "Are you sure you want to delete this report?", [
@@ -157,13 +169,15 @@ const Homepage = () => {
 
   return (
     <ScreenWrapper>
-      <TextInput
-        style={styles.searchInput}
-        placeholder="Search by source, headline, lead, tags, or date/time"
-        value={searchQuery}
-        onChangeText={setSearchQuery}
-        placeholderTextColor="#6b6b6b"
-      />
+      <View style={styles.searchContainer}>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search by source, headline, lead, tags, or date/time"
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholderTextColor="#6b6b6b"
+        />
+      </View>
 
       {loading ? (
         <View style={styles.loadingContainer}>
@@ -178,18 +192,29 @@ const Homepage = () => {
           showsVerticalScrollIndicator={false}
           refreshing={loading}
           onRefresh={fetchApprovedReports}
+          style={styles.flatList}
+          onEndReached={() => {
+            if (postsToRender < allFilteredReports.length) {
+              setPostsToRender((prev) => prev + 10);
+            }
+          }}
+          onEndReachedThreshold={0.5}
+          initialNumToRender={10}
+          maxToRenderPerBatch={10}
+          windowSize={21}
         />
       ) : (
         <Text style={styles.noReportsText}>No approved reports found!</Text>
       )}
 
-      <Modal visible={!!selectedReport} animationType="slide" onRequestClose={handleCloseModal}>
+      {/* Removed modal and StoryModal usage */}
+      {/* <Modal visible={!!selectedReport} animationType="slide" onRequestClose={handleCloseModal}>
         <StoryModal
           showModal={showModal}
           handleCloseModal={handleCloseModal}
           selectedNewsItem={selectedReport}
         />
-      </Modal>
+      </Modal> */}
 
       <Modal visible={showMediaModal} animationType="slide" onRequestClose={handleCloseMediaModal}>
         <MediaModal
@@ -214,25 +239,34 @@ const Homepage = () => {
 
 
 const styles = StyleSheet.create({
-  searchInput: {
-    height: 45,
-    marginHorizontal: 15,
-    marginBottom: 20,
-    paddingHorizontal: 20,
+  searchContainer: {
+    position: "absolute",
+    top: 5,
+    left: 15,
+    right: 15,
+    zIndex: 10,
+    backgroundColor: "#ffffff",
+    borderRadius: 30,
     borderColor: "#123458",
     borderWidth: 1.5,
-    borderRadius: 30,
-    backgroundColor: "#ffffff",
-    fontSize: 16,
-    color: "#123458",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 4,
     elevation: 3,
   },
+  searchInput: {
+    height: 45,
+    paddingHorizontal: 20,
+    fontSize: 16,
+    color: "#123458",
+  },
   feed: {
     paddingHorizontal: 15,
+    paddingTop: 65, // to avoid overlap with floating search bar
+  },
+  flatList: {
+    marginTop: 10,
   },
   noReportsText: {
     textAlign: "center",
