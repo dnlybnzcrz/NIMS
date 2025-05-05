@@ -1,10 +1,16 @@
 {
   "expo": {
     "name": "PBS NIMS",
-    "slug": "PBS NIMS",
+    "slug": "PBSNIMS",
     "version": "1.0.0",
     "plugins": [
       "expo-video"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "a2e7a354-68ba-44db-bf0a-77839fcb8ba8"
+      }
+    },
+    "owner": "dnlybnzcrz"
   }
 }

@@ -1,13 +1,22 @@
-import React, { useState } from "react";
-import { View, Text, ScrollView, StyleSheet, Image, TouchableOpacity, StatusBar, SafeAreaView, Platform } from "react-native";
+import React, { useState, useRef } from "react";
+import { View, Text, ScrollView, StyleSheet, Image, TouchableOpacity, StatusBar, SafeAreaView, Platform, Modal } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import moment from "moment";
+import { Video } from "expo-av";
 import pbsheader from "../components/pbsheader.png";
 
 const StoryScreen = ({ route = {}, navigation }) => {
   // Extract params from navigation
   const { newsItem, searchQuery } = route.params || {};
   
+  const [fullImageModalVisible, setFullImageModalVisible] = useState(false);
+  const [selectedImageUri, setSelectedImageUri] = useState(null);
+
+  // New state for media modal
+  const [mediaModalVisible, setMediaModalVisible] = useState(false);
+  const [mediaUri, setMediaUri] = useState(null);
+  const [mediaType, setMediaType] = useState(null); // 'video' or 'audio'
+
   if (!newsItem) {
     return (
       <SafeAreaView style={styles.errorContainer}>
@@ -41,9 +50,6 @@ const StoryScreen = ({ route = {}, navigation }) => {
 
   const S3_BASE_URL = "https://pbs-nims.s3.ap-southeast-1.amazonaws.com";
 
-  const [fullImageModalVisible, setFullImageModalVisible] = useState(false);
-  const [selectedImageUri, setSelectedImageUri] = useState(null);
-
   const openFullImage = (uri) => {
     setSelectedImageUri(uri);
     setFullImageModalVisible(true);
@@ -52,6 +58,18 @@ const StoryScreen = ({ route = {}, navigation }) => {
   const closeFullImage = () => {
     setSelectedImageUri(null);
     setFullImageModalVisible(false);
+  };
+
+  const openMediaModal = (uri, type) => {
+    setMediaUri(uri);
+    setMediaType(type);
+    setMediaModalVisible(true);
+  };
+
+  const closeMediaModal = () => {
+    setMediaUri(null);
+    setMediaType(null);
+    setMediaModalVisible(false);
   };
 
   const renderImages = () => {
@@ -69,11 +87,37 @@ const StoryScreen = ({ route = {}, navigation }) => {
     ));
   };
 
+  const renderVideos = () => {
+    if (!files?.videos || files.videos.length === 0) {
+      return null;
+    }
+    return files.videos.map((videoUrl, index) => (
+      <TouchableOpacity key={index} onPress={() => openMediaModal(S3_BASE_URL + videoUrl, 'video')} style={styles.mediaThumbnail}>
+        <View style={styles.mediaThumbnailContent}>
+          <Text style={styles.mediaThumbnailText}>▶ Video</Text>
+        </View>
+      </TouchableOpacity>
+    ));
+  };
+
+  const renderAudios = () => {
+    if (!files?.audios || files.audios.length === 0) {
+      return null;
+    }
+    return files.audios.map((audioUrl, index) => (
+      <TouchableOpacity key={index} onPress={() => openMediaModal(S3_BASE_URL + audioUrl, 'audio')} style={styles.mediaThumbnail}>
+        <View style={styles.mediaThumbnailContent}>
+          <Text style={styles.mediaThumbnailText}>▶ Audio</Text>
+        </View>
+      </TouchableOpacity>
+    ));
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#F1EFEC" />
       
-      {/* Header */}
+      {/* Header */} 
       <SafeAreaView style={styles.header}>
         <View style={styles.headerContent}>
           <Image source={pbsheader} style={styles.headerImage} resizeMode="contain" />
@@ -120,6 +164,8 @@ const StoryScreen = ({ route = {}, navigation }) => {
             </Text>
             
             {renderImages()}
+            {renderVideos()}
+            {renderAudios()}
           </ScrollView>
         </View>
       </View>
@@ -134,6 +180,31 @@ const StoryScreen = ({ route = {}, navigation }) => {
           </TouchableOpacity>
         </View>
       )}
+
+      {/* Media Modal */}
+      <Modal
+        visible={mediaModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={closeMediaModal}
+      >
+        <View style={styles.mediaModalBackground}>
+          <TouchableOpacity style={styles.mediaModalCloseArea} onPress={closeMediaModal} />
+          <Video
+            source={{ uri: mediaUri }}
+            style={styles.mediaPlayer}
+            useNativeControls
+            resizeMode="contain"
+            isLooping={false}
+            shouldPlay
+            isMuted={false}
+            isAudioOnly={mediaType === 'audio'}
+          />
+          <TouchableOpacity style={styles.mediaModalCloseButton} onPress={closeMediaModal}>
+            <Text style={styles.mediaModalCloseButtonText}>Close</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -158,7 +229,7 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: "#F1EFEC",
-    shadowColor: "#000",
+    paddingTop: Platform.OS === 'android' ? 20 : 0,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 3,
@@ -169,7 +240,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 10,
-    paddingTop: Platform.OS === 'ios' ? 0 : 10,
+    paddingTop: Platform.OS === 'ios' ? 0 : 30,
     paddingBottom: 10,
   },
   backButtonContainer: {
@@ -207,7 +278,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "800",
     color: "#222",
-    marginBottom: 12,
+    marginBottom: 6,
     lineHeight: 32,
     textTransform: "uppercase",
   },
@@ -257,6 +328,17 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     borderRadius: 14,
   },
+  video: {
+    width: "100%",
+    height: 220,
+    marginBottom: 20,
+    borderRadius: 14,
+  },
+  audio: {
+    width: "100%",
+    height: 50,
+    marginBottom: 20,
+  },
   backButton: {
     backgroundColor: "#123458",
     paddingVertical: 12,
@@ -298,6 +380,70 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: '700',
+  },
+  mediaContainer: {
+    position: 'relative',
+  },
+  playButtonOverlay: {
+    position: 'absolute',
+    top: '40%',
+    left: '45%',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: 30,
+    padding: 10,
+  },
+  playButtonText: {
+    color: '#fff',
+    fontSize: 30,
+    fontWeight: 'bold',
+  },
+  mediaModalBackground: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 100,
+  },
+  mediaModalCloseArea: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+  },
+  mediaPlayer: {
+    width: '90%',
+    height: '60%',
+    borderRadius: 10,
+  },
+  mediaModalCloseButton: {
+    position: 'absolute',
+    bottom: 40,
+    backgroundColor: '#123458',
+    paddingVertical: 10,
+    paddingHorizontal: 30,
+    borderRadius: 20,
+  },
+  mediaModalCloseButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  mediaThumbnail: {
+    marginBottom: 15,
+    backgroundColor: '#ddd',
+    borderRadius: 10,
+    padding: 20,
+    alignItems: 'center',
+  },
+  mediaThumbnailContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  mediaThumbnailText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#123458',
   },
 });
 
