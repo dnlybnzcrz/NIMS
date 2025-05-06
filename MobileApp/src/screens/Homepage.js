@@ -172,7 +172,7 @@ const Homepage = () => {
       <View style={styles.searchContainer}>
         <TextInput
           style={styles.searchInput}
-          placeholder="Search by source, headline, lead, tags, or date/time"
+          placeholder="Search"
           value={searchQuery}
           onChangeText={setSearchQuery}
           placeholderTextColor="#6b6b6b"

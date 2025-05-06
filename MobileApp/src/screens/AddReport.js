@@ -105,24 +105,68 @@ const MediaPreview = ({ media, onRemove, onPlayVideo }) => {
 };
 
 // 1. Split Component Into Smaller Parts - TagSelector Component
+
 const TagSelector = ({ tags, selectedTags, onChange, visible, toggleVisibility }) => {
+  const [searchText, setSearchText] = React.useState("");
+
+  // Filter tags based on search text
+  const filteredTags = searchText.trim() === ""
+    ? tags
+    : tags.filter(tag =>
+        tag.name.toLowerCase().includes(searchText.toLowerCase())
+      );
+
+  // Remove tag handler
+  const removeTag = (tagName) => {
+    onChange(selectedTags.filter(t => t !== tagName));
+  };
+
   return (
     <>
+      
+
       <TouchableOpacity
         onPress={toggleVisibility}
         style={styles.dropdown}
       >
-        <Text style={styles.dropdownText}>
-          {selectedTags.length > 0
-            ? selectedTags.join(", ")
-            : "Select tags (optional)"}
-        </Text>
+        {selectedTags.length > 0 ? (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ alignItems: "center" }}
+            style={{ maxHeight: 50 }}
+          >
+            {selectedTags.map((tagName) => (
+              <View key={tagName} style={styles.selectedTag}>
+                <Text style={styles.selectedTagText}>{tagName}</Text>
+                <TouchableOpacity
+                  onPress={() => {
+                    onChange(selectedTags.filter(t => t !== tagName));
+                  }}
+                  style={styles.removeTagButton}
+                >
+                  <Text style={styles.removeTagButtonText}>×</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+          </ScrollView>
+        ) : (
+          <Text style={styles.dropdownText}>Select tags (optional)</Text>
+        )}
       </TouchableOpacity>
 
       {visible && (
         <View style={styles.dropdownList}>
-          <ScrollView>
-            {tags.map((tag) => {
+          {/* Search input */}
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search tags..."
+            placeholderTextColor="#6b7280"
+            value={searchText}
+            onChangeText={setSearchText}
+          />
+          <ScrollView keyboardShouldPersistTaps="handled">
+            {filteredTags.map((tag) => {
               const isSelected = selectedTags.includes(tag.name);
               return (
                 <TouchableOpacity
@@ -293,6 +337,43 @@ const AddReport = (props) => {
       const draft = await AsyncStorage.getItem('draft-report');
       if (draft) {
         const parsedDraft = JSON.parse(draft);
+
+        // Normalize media URIs and ensure name and mimeType for upload after restoring draft
+        if (parsedDraft.media) {
+          const normalizedMedia = { audio: [], images: [], videos: [] };
+          const prefix = Platform.OS !== "web" ? "file://" : "";
+          ["audio", "images", "videos"].forEach((type) => {
+            if (Array.isArray(parsedDraft.media[type])) {
+              normalizedMedia[type] = parsedDraft.media[type].map((file) => {
+                let newFile = { ...file };
+                if (newFile.uri && !newFile.uri.startsWith("file://") && prefix) {
+                  newFile.uri = prefix + newFile.uri;
+                }
+                // Ensure name property
+                if (!newFile.name && newFile.uri) {
+                  const uriParts = newFile.uri.split("/");
+                  newFile.name = uriParts[uriParts.length - 1] || `file_${type}`;
+                }
+                // Ensure mimeType property
+                if (!newFile.mimeType && newFile.uri) {
+                  const lowerUri = newFile.uri.toLowerCase();
+                  if (lowerUri.match(/\.(jpg|jpeg|png|gif|webp|heic)$/)) {
+                    newFile.mimeType = "image/jpeg";
+                  } else if (lowerUri.match(/\.(mp4|mov|avi|wmv|flv|mkv)$/)) {
+                    newFile.mimeType = lowerUri.endsWith(".mov") ? "video/quicktime" : "video/mp4";
+                  } else if (lowerUri.match(/\.(mp3|wav|ogg|m4a|aac)$/)) {
+                    newFile.mimeType = "audio/mpeg";
+                  } else {
+                    newFile.mimeType = "*/*";
+                  }
+                }
+                return newFile;
+              });
+            }
+          });
+          parsedDraft.media = normalizedMedia;
+        }
+
         Alert.alert(
           "Restore Draft",
           "Would you like to restore your previous draft?",
@@ -629,9 +710,8 @@ const AddReport = (props) => {
         keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
       >
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <ScrollView style={styles.fullScreenContainer} keyboardShouldPersistTaps="handled">
+          <ScrollView style={styles.fullScreenContainer} keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1 }}>
             <Text style={styles.heading}>NEW REPORT</Text>
-
             <TextInput
               ref={titleRef}
               placeholder="Headline"
@@ -641,7 +721,6 @@ const AddReport = (props) => {
               onChangeText={(text) => updateFormField("title", text)}
               multiline={true}
             />
-
             {/* 1. Split Component Into Smaller Parts - Using TagSelector */}
             <TagSelector 
               tags={tags}
@@ -650,7 +729,6 @@ const AddReport = (props) => {
               visible={uiState.showTagDropdown}
               toggleVisibility={() => toggleUiState("showTagDropdown")}
             />
-
             {/* 1. Split Component Into Smaller Parts - Using DateSelector */}
             <DateSelector 
               date={formData.airDate}
@@ -658,7 +736,6 @@ const AddReport = (props) => {
               visible={uiState.showDatePicker}
               toggleVisibility={(value) => toggleUiState("showDatePicker", value)}
             />
-
             <TextInput
               placeholder="Lead"
               placeholderTextColor="#6b7280"
@@ -682,14 +759,12 @@ const AddReport = (props) => {
               value={formData.remarks}
               onChangeText={(text) => updateFormField("remarks", text)}
             />
-
             {/* 1. Split Component Into Smaller Parts - Using MediaPreview */}
             <MediaPreview 
               media={allMedia} 
               onRemove={handleMediaRemove} 
               onPlayVideo={playVideo} // FIXED: Added missing playVideo prop
             />
-
             <TouchableOpacity 
               style={styles.button} 
               onPress={fileSelectedHandler}
@@ -699,11 +774,9 @@ const AddReport = (props) => {
                 {isLoading.mediaSelection ? "Uploading..." : "Choose Media Files"}
               </Text>
             </TouchableOpacity>
-
             {uiState.uploadProgress > 0 && (
               <Text style={styles.progressText}>Uploading: {uiState.uploadProgress}%</Text>
             )}
-
             <Modal
               transparent
               visible={uiState.uploadProgress > 0 && uiState.uploadProgress < 100}
@@ -717,7 +790,6 @@ const AddReport = (props) => {
                 </View>
               </View>
             </Modal>
-
             <TouchableOpacity 
               style={[
                 styles.button, 
@@ -730,7 +802,6 @@ const AddReport = (props) => {
                 {isLoading.upload ? "Uploading..." : "Upload Report"}
               </Text>
             </TouchableOpacity>
-            
             {/* Draft saved indicator */}
             {(formData.title || formData.lead || formData.body) && (
               <Text style={styles.draftSavedText}>Draft saved automatically</Text>
@@ -761,6 +832,7 @@ const AddReport = (props) => {
     </ScreenWrapper>
   );
 };
+
 
 const styles = StyleSheet.create({
   fullScreenContainer: {
@@ -820,7 +892,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderColor: "#cbd5e1",
     borderWidth: 1,
-    maxHeight: 160,
+    maxHeight: 300,
     marginBottom: 18,
     paddingVertical: 6,
   },
@@ -835,6 +907,49 @@ const styles = StyleSheet.create({
   tagSelected: {
     fontWeight: "700",
     color: "#2563eb",
+  },
+  selectedTagsContainer: {
+    flexDirection: "row",
+    marginBottom: 8,
+  },
+  selectedTag: {
+    flexDirection: "row",
+    backgroundColor: "#2563eb",
+    borderRadius: 16,
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    marginRight: 8,
+    alignItems: "center",
+  },
+  selectedTagText: {
+    color: "white",
+    fontWeight: "600",
+    marginRight: 6,
+  },
+  removeTagButton: {
+    backgroundColor: "#ef4444",
+    borderRadius: 12,
+    width: 20,
+    height: 20,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  removeTagButtonText: {
+    color: "#fff",
+    fontSize: 14,
+    lineHeight: 14,
+    fontWeight: "bold",
+  },
+  searchInput: {
+    backgroundColor: "#f3f4f6",
+    borderColor: "#cbd5e1",
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    fontSize: 16,
+    marginBottom: 8,
+    color: "#1e293b",
   },
   mediaPreviewContainer: {
     flexDirection: "row",

@@ -48,11 +48,7 @@ const ReportCard = ({ report, handleShowModal, handleDeleteReport, handleShowMed
             resizeMode="cover"
             accessibilityLabel="Report image thumbnail"
           />
-        ) : (
-          <View style={styles.noMediaPlaceholder}>
-            <Text style={styles.noMediaText}>No images available</Text>
-          </View>
-        )}
+        ) : null}
         <Text
           style={[styles.headline, styles.headlineBackground]}
           numberOfLines={2}

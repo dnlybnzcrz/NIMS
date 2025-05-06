@@ -41,14 +41,20 @@ const LoginScreen = ({ navigation }) => {
       );
       const userDetails = userDetailsResponse.data.userData;
 
-      // Store token and user ID together
-      await AsyncStorage.setItem('user', JSON.stringify({
-        token,
-        id: userDetails.id,
-      }));
+      // Store token and user ID together only if rememberMe is true
+      if (rememberMe) {
+        await AsyncStorage.setItem('user', JSON.stringify({
+          token,
+          id: userDetails.id,
+        }));
 
-      // Optionally store full details too
-      await AsyncStorage.setItem('userDetails', JSON.stringify(userDetails));
+        // Optionally store full details too
+        await AsyncStorage.setItem('userDetails', JSON.stringify(userDetails));
+      } else {
+        // Clear any stored user data if rememberMe is false
+        await AsyncStorage.removeItem('user');
+        await AsyncStorage.removeItem('userDetails');
+      }
 
       setUserToken(token); // Set token in context
       navigation.replace('Home'); // Navigate to Home screen after successful login

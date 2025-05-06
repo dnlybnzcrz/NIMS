@@ -3,14 +3,18 @@
     "name": "PBS NIMS",
     "slug": "PBSNIMS",
     "version": "1.0.0",
+    "scheme": "pbsnims",
     "plugins": [
       "expo-video"
     ],
     "extra": {
       "eas": {
-        "projectId": "a2e7a354-68ba-44db-bf0a-77839fcb8ba8"
+        "projectId": "4a4d6698-d435-4dee-8712-0459741be268"
       }
     },
-    "owner": "dnlybnzcrz"
+    "owner": "dnlybnzcrz",
+    "android": {
+      "package": "com.dnlybnzcrz.PBSNIMS"
+    }
   }
 }

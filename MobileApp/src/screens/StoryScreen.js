@@ -229,7 +229,7 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: "#F1EFEC",
-    paddingTop: Platform.OS === 'android' ? 20 : 0,
+    paddingTop: Platform.OS === 'android' ? 0 : 0,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 3,
@@ -240,7 +240,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 10,
-    paddingTop: Platform.OS === 'ios' ? 0 : 30,
+    paddingTop: Platform.OS === 'ios' ? 0 : 0,
     paddingBottom: 10,
   },
   backButtonContainer: {

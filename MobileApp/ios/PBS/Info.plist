@@ -27,12 +27,11 @@
 	<key>LSMinimumSystemVersion</key>
 	<string>12.0</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-<string>We need access to your photo library for document picking.</string>
-<key>NSCameraUsageDescription</key>
-<string>We need access to your camera for document picking.</string>
-<key>NSMicrophoneUsageDescription</key>
-<string>We need access to your microphone for document picking.</string>
-
+	<string>We need access to your photo library for document picking.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>We need access to your camera for document picking.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>We need access to your microphone for document picking.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>
@@ -56,5 +55,14 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>pbsnims</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>
