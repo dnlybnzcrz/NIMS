@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import {
   View,
   Text,
@@ -15,12 +15,15 @@ import moment from "moment";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "../../contexts/AuthContext";
 import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import MediaModal from "../components/MediaModal";
 import ReportCard from "../components/ReportCard";
 import ScreenWrapper from "../components/ScreenWrapper";
 
 const Homepage = () => {
   const navigation = useNavigation();
+
+  const flatListRef = useRef(null);
 
   const [approvedReports, setApprovedReports] = useState([]);
   // Removed modal state variables as we will navigate to StoryScreen instead
@@ -48,6 +51,21 @@ const Homepage = () => {
       console.error("No token found, user is not authenticated");
     }
   }, [userToken]);
+
+  useEffect(() => {
+    const eventEmitter = require('../utils/EventEmitter').default;
+    const handler = () => {
+      if (flatListRef.current) {
+        flatListRef.current.scrollToOffset({ offset: 0, animated: true });
+      }
+      fetchApprovedReports();
+    };
+    eventEmitter.on('scrollToTopAndRefresh', handler);
+
+    return () => {
+      eventEmitter.off('scrollToTopAndRefresh', handler);
+    };
+  }, []);
 
   const fetchApprovedReports = () => {
     setLoading(true);
@@ -170,6 +188,7 @@ const Homepage = () => {
   return (
     <ScreenWrapper>
       <View style={styles.searchContainer}>
+        <Ionicons name="search" size={20} color="#6b6b6b" style={styles.searchIcon} />
         <TextInput
           style={styles.searchInput}
           placeholder="Search"
@@ -184,7 +203,8 @@ const Homepage = () => {
           <ActivityIndicator size="large" color="#123458" />
         </View>
       ) : filteredReports.length ? (
-        <FlatList
+      <FlatList
+          ref={flatListRef}
           data={filteredReports}
           renderItem={renderReport}
           keyExtractor={(item) => item._id}
@@ -222,7 +242,7 @@ const Homepage = () => {
           handleClose={handleCloseMediaModal}
           mediaItems={mediaUrls}
           initialIndex={mediaInitialIndex}
-        />
+      />
       </Modal>
 
       <TouchableOpacity
@@ -236,6 +256,7 @@ const Homepage = () => {
     </ScreenWrapper>
   );
 };
+
 
 
 const styles = StyleSheet.create({
@@ -254,12 +275,19 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 4,
     elevation: 3,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
   },
   searchInput: {
+    flex: 1,
     height: 45,
-    paddingHorizontal: 20,
+    paddingHorizontal: 10,
     fontSize: 16,
     color: "#123458",
+  },
+  searchIcon: {
+    marginLeft: 10,
   },
   feed: {
     paddingHorizontal: 15,

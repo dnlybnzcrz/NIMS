@@ -51,12 +51,12 @@ const ReportCard = ({ report, handleShowModal, handleDeleteReport, handleShowMed
         ) : null}
         <Text
           style={[styles.headline, styles.headlineBackground]}
-          numberOfLines={2}
-          ellipsizeMode="tail"
+          numberOfLines={files?.images && files.images.length > 0 ? 2 : undefined}
+          ellipsizeMode={files?.images && files.images.length > 0 ? "tail" : undefined}
         >
           {highlightText(
             lead
-              ? lead.split(" ").length > 20
+              ? (files?.images && files.images.length > 0 && lead.split(" ").length > 20)
                 ? lead.split(" ").slice(0, 15).join(" ") + "..."
                 : lead
               : "No Headline"

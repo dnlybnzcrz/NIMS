@@ -1,5 +1,5 @@
-import React, { useState, useRef } from "react";
-import { View, Text, ScrollView, StyleSheet, Image, TouchableOpacity, StatusBar, SafeAreaView, Platform, Modal } from "react-native";
+import React, { useState, useRef, useEffect } from "react";
+import { View, Text, ScrollView, StyleSheet, Image, TouchableOpacity, StatusBar, SafeAreaView, Platform, Modal, ActivityIndicator, Animated } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import moment from "moment";
 import { Video } from "expo-av";
@@ -16,6 +16,41 @@ const StoryScreen = ({ route = {}, navigation }) => {
   const [mediaModalVisible, setMediaModalVisible] = useState(false);
   const [mediaUri, setMediaUri] = useState(null);
   const [mediaType, setMediaType] = useState(null); // 'video' or 'audio'
+  const [isMediaLoading, setIsMediaLoading] = useState(false);
+  const videoRef = useRef(null);
+
+  // New state and animation value for recording animation
+  const recordingAnimation = useRef(new Animated.Value(0)).current;
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  useEffect(() => {
+    if (isPlaying && mediaType === 'audio') {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(recordingAnimation, {
+            toValue: 1,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+          Animated.timing(recordingAnimation, {
+            toValue: 0,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    } else {
+      recordingAnimation.stopAnimation();
+      recordingAnimation.setValue(0);
+    }
+  }, [isPlaying, mediaType]);
+
+  // Handler for playback status update
+  const onPlaybackStatusUpdate = (status) => {
+    if (status.isPlaying !== isPlaying) {
+      setIsPlaying(status.isPlaying);
+    }
+  };
 
   if (!newsItem) {
     return (
@@ -70,6 +105,7 @@ const StoryScreen = ({ route = {}, navigation }) => {
     setMediaUri(null);
     setMediaType(null);
     setMediaModalVisible(false);
+    setIsPlaying(false);
   };
 
   const renderImages = () => {
@@ -91,13 +127,25 @@ const StoryScreen = ({ route = {}, navigation }) => {
     if (!files?.videos || files.videos.length === 0) {
       return null;
     }
-    return files.videos.map((videoUrl, index) => (
-      <TouchableOpacity key={index} onPress={() => openMediaModal(S3_BASE_URL + videoUrl, 'video')} style={styles.mediaThumbnail}>
-        <View style={styles.mediaThumbnailContent}>
-          <Text style={styles.mediaThumbnailText}>▶ Video</Text>
-        </View>
-      </TouchableOpacity>
-    ));
+    return files.videos.map((videoUrl, index) => {
+      const videoUri = S3_BASE_URL + videoUrl;
+      return (
+        <TouchableOpacity key={index} onPress={() => openMediaModal(videoUri, 'video')} style={styles.mediaThumbnail}>
+          <Video
+            source={{ uri: videoUri }}
+            style={styles.videoThumbnail}
+            resizeMode="cover"
+            shouldPlay={false}
+            useNativeControls={false}
+            isLooping={false}
+            isMuted={true}
+          />
+          <View style={styles.playButtonOverlay}>
+            <Text style={styles.playButtonText}>▶</Text>
+          </View>
+        </TouchableOpacity>
+      );
+    });
   };
 
   const renderAudios = () => {
@@ -105,7 +153,7 @@ const StoryScreen = ({ route = {}, navigation }) => {
       return null;
     }
     return files.audios.map((audioUrl, index) => (
-      <TouchableOpacity key={index} onPress={() => openMediaModal(S3_BASE_URL + audioUrl, 'audio')} style={styles.mediaThumbnail}>
+      <TouchableOpacity key={index} onPress={() => openMediaModal(S3_BASE_URL + audioUrl, 'audio')} style={styles.audioThumbnail}>
         <View style={styles.mediaThumbnailContent}>
           <Text style={styles.mediaThumbnailText}>▶ Audio</Text>
         </View>
@@ -190,16 +238,63 @@ const StoryScreen = ({ route = {}, navigation }) => {
       >
         <View style={styles.mediaModalBackground}>
           <TouchableOpacity style={styles.mediaModalCloseArea} onPress={closeMediaModal} />
-          <Video
-            source={{ uri: mediaUri }}
-            style={styles.mediaPlayer}
-            useNativeControls
-            resizeMode="contain"
-            isLooping={false}
-            shouldPlay
-            isMuted={false}
-            isAudioOnly={mediaType === 'audio'}
-          />
+          {mediaModalVisible && (
+            <Video
+              ref={videoRef}
+              source={{ uri: mediaUri }}
+              style={styles.mediaPlayer}
+              useNativeControls
+              resizeMode="contain"
+              isLooping={false}
+              shouldPlay={true}
+              isMuted={false}
+              isAudioOnly={mediaType === 'audio'}
+              onLoadStart={() => setIsMediaLoading(true)}
+              onLoad={() => setIsMediaLoading(false)}
+              onPlaybackStatusUpdate={onPlaybackStatusUpdate}
+            />
+          )}
+          {isMediaLoading && (
+            <View style={styles.mediaLoadingOverlay}>
+              <ActivityIndicator size="large" color="#fff" />
+            </View>
+          )}
+          {mediaType === 'audio' && isPlaying && (
+            <Animated.View
+              style={[
+                styles.playingAudioContainer,
+                {
+                  opacity: recordingAnimation.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0.3, 1],
+                  }),
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                },
+              ]}
+            >
+              <Animated.View
+                style={[
+                  styles.recordingCircle,
+                  {
+                    opacity: recordingAnimation.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0.3, 1],
+                    }),
+                    transform: [
+                      {
+                        scale: recordingAnimation.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [1, 1.5],
+                        }),
+                      },
+                    ],
+                  },
+                ]}
+              />
+              <Text style={styles.playingAudioText}>Playing audio</Text>
+            </Animated.View>
+          )}
           <TouchableOpacity style={styles.mediaModalCloseButton} onPress={closeMediaModal}>
             <Text style={styles.mediaModalCloseButtonText}>Close</Text>
           </TouchableOpacity>
@@ -413,7 +508,7 @@ const styles = StyleSheet.create({
   },
   mediaPlayer: {
     width: '90%',
-    height: '60%',
+    height: '80%',
     borderRadius: 10,
   },
   mediaModalCloseButton: {
@@ -433,8 +528,19 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     backgroundColor: '#ddd',
     borderRadius: 10,
-    padding: 20,
+    padding: 0,
     alignItems: 'center',
+    justifyContent: 'center',
+  },
+  audioThumbnail: {
+    marginBottom: 15,
+    backgroundColor: '#ddd',
+    borderRadius: 10,
+    padding: 10,
+    width: '100%',
+    height: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   mediaThumbnailContent: {
     flexDirection: 'row',
@@ -444,6 +550,54 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#123458',
+  },
+  videoThumbnail: {
+    width: '100%',
+    height: 220,
+    borderRadius: 14,
+  },
+  mediaLoadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 10,
+  },
+  recordingAnimation: {
+    flexDirection: 'row',
+    position: 'absolute',
+    bottom: '40%',  // moved up to be above the media player
+    alignSelf: 'center',
+    zIndex: 101,
+  },
+  playingAudioContainer: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: [{ translateX: -75 }, { translateY: -10 }],
+    zIndex: 101,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  recordingCircle: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#ff3b30',
+    marginRight: 10,
+  },
+  playingAudioText: {
+    color: '#ff3b30',
+    fontWeight: '700',
+    fontSize: 16,
   },
 });
 

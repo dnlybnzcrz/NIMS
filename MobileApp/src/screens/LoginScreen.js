@@ -68,7 +68,6 @@ const LoginScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <Image source={require('../../assets/wobg2.png')} style={styles.backgroundLogo} />
       <Image source={require('../../assets/Logo.png')} style={styles.logo} />
 
       <View style={styles.inputContainer}>
@@ -139,7 +138,7 @@ const styles = StyleSheet.create({
     resizeMode: 'contain',
   },
   logo: {
-    width: 370,
+    width: 330,
     height: 145,
     marginBottom: 30,
     resizeMode: 'contain',

@@ -123,8 +123,6 @@ const TagSelector = ({ tags, selectedTags, onChange, visible, toggleVisibility }
 
   return (
     <>
-      
-
       <TouchableOpacity
         onPress={toggleVisibility}
         style={styles.dropdown}
@@ -157,14 +155,25 @@ const TagSelector = ({ tags, selectedTags, onChange, visible, toggleVisibility }
 
       {visible && (
         <View style={styles.dropdownList}>
-          {/* Search input */}
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search tags..."
-            placeholderTextColor="#6b7280"
-            value={searchText}
-            onChangeText={setSearchText}
-          />
+          {/* Search input with close button */}
+          <View style={styles.searchInputContainer}>
+            <TextInput
+              style={styles.searchInputWithClose}
+              placeholder="Search tags..."
+              placeholderTextColor="#6b7280"
+              value={searchText}
+              onChangeText={setSearchText}
+            />
+            <TouchableOpacity
+              onPress={() => {
+                setSearchText("");
+                toggleVisibility(false);
+              }}
+              style={styles.closeButton}
+            >
+              <Text style={styles.closeButtonText}>×</Text>
+            </TouchableOpacity>
+          </View>
           <ScrollView keyboardShouldPersistTaps="handled">
             {filteredTags.map((tag) => {
               const isSelected = selectedTags.includes(tag.name);
@@ -201,10 +210,10 @@ const DateSelector = ({ date }) => {
   return (
     <>
       <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 8 }}>
-        <View style={[styles.dateInput, { flex: 1, marginRight: 5 }]}>
+        <View style={[styles.dateInput, { flex: 2, marginRight: 5, justifyContent: "center", alignItems: "flex-start" }]}>
           <Text style={styles.dateText}>{safeDate.toDateString()}</Text>
         </View>
-        <View style={[styles.dateInput, { flex: 1, marginLeft: 5 }]}>
+        <View style={[styles.dateInput, { flex: 1, marginLeft: 5, justifyContent: "center", alignItems: "center" }]}>
           <Text style={styles.dateText}>{safeDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
         </View>
       </View>
@@ -618,8 +627,12 @@ const AddReport = (props) => {
         config
       );
       
-      toggleUiState("uploadSuccess", true);
-      toggleUiState("uploadProgress", 0);
+      toggleUiState("uploadProgress", 100);
+      // Wait a short time to show 100% progress before success modal
+      setTimeout(() => {
+        toggleUiState("uploadSuccess", true);
+        toggleUiState("uploadProgress", 0);
+      }, 500);
       props.updateReports?.(res.data);
       
       // Clear draft after successful upload
@@ -711,7 +724,22 @@ const AddReport = (props) => {
       >
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <ScrollView style={styles.fullScreenContainer} keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1 }}>
-            <Text style={styles.heading}>NEW REPORT</Text>
+            <View style={styles.headerContainer}>
+              <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => {
+                  if (props.navigation?.isFocused && props.navigation.isFocused()) {
+                    props.navigation.navigate("Homepage", { animation: 'slide_to_right' });
+                  } else {
+                    props.navigation?.navigate("Homepage", { animation: 'slide_to_right' });
+                  }
+                }}
+              >
+                <Ionicons name="arrow-back" size={24} color="white" />
+                <Text style={styles.backButtonText}>Back</Text>
+              </TouchableOpacity>
+              <Text style={styles.heading}>NEW REPORT</Text>
+            </View>
             <TextInput
               ref={titleRef}
               placeholder="Headline"
@@ -774,9 +802,7 @@ const AddReport = (props) => {
                 {isLoading.mediaSelection ? "Uploading..." : "Choose Media Files"}
               </Text>
             </TouchableOpacity>
-            {uiState.uploadProgress > 0 && (
-              <Text style={styles.progressText}>Uploading: {uiState.uploadProgress}%</Text>
-            )}
+            {/* Removed uploading progress text to show only modal */}
             <Modal
               transparent
               visible={uiState.uploadProgress > 0 && uiState.uploadProgress < 100}
@@ -837,16 +863,23 @@ const AddReport = (props) => {
 const styles = StyleSheet.create({
   fullScreenContainer: {
     flex: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: 15,
     paddingTop: 20,
+    paddingBottom: 30,
   },
   heading: {
     fontSize: 24,
     fontWeight: "700",
     color: "white",
     marginBottom: 20,
-    textAlign: "center",
     letterSpacing: 1,
+  },
+  headerContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 20,
+    justifyContent: "center",
+    position: "relative",
   },
   input: {
     backgroundColor: "#f3f4f6",
@@ -951,6 +984,37 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     color: "#1e293b",
   },
+  searchInputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f3f4f6",
+    borderColor: "#cbd5e1",
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    marginBottom: 8,
+  },
+  searchInputWithClose: {
+    flex: 1,
+    fontSize: 16,
+    color: "#1e293b",
+  },
+  closeButton: {
+    marginLeft: 8,
+    backgroundColor: "#ef4444",
+    borderRadius: 12,
+    width: 28,
+    height: 28,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  closeButtonText: {
+    color: "#fff",
+    fontSize: 20,
+    lineHeight: 20,
+    fontWeight: "bold",
+  },
   mediaPreviewContainer: {
     flexDirection: "row",
     marginBottom: 16,
@@ -1025,7 +1089,6 @@ const styles = StyleSheet.create({
     transform: [{ translateX: -20 }, { translateY: -20 }],
     zIndex: 5,
   },
-
   button: {
     backgroundColor: "#2563eb",
     borderRadius: 10,
@@ -1086,7 +1149,20 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 16,
     fontStyle: "italic",
-  }
+  },
+  backButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+    position: "absolute",
+    left: 0,
+  },
+  backButtonText: {
+    color: "white",
+    fontSize: 16,
+    marginLeft: 6,
+    fontWeight: "600",
+  },
 });
 
 export default AddReport;
