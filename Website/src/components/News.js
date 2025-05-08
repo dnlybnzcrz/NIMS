@@ -42,6 +42,7 @@ const News = () => {
         }
     };
 
+
     const toggleAddReportModal = () => {
         setIsAddReportModalOpen(!isAddReportModalOpen);
     };
