@@ -15,8 +15,9 @@ const BottomTabNavigator = () => {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarIcon: ({ focused, color, size }) => {
+        tabBarIcon: ({ focused, color }) => {
           let iconName;
+          const iconSize = 24;
 
           if (route.name === 'Home') {
             iconName = focused ? 'home' : 'home-outline';
@@ -28,13 +29,16 @@ const BottomTabNavigator = () => {
             iconName = focused ? 'add-circle' : 'add-circle-outline';
           }
 
-          return <Ionicons name={iconName} size={size} color={color} />;
+          return <Ionicons name={iconName} size={iconSize} color={color} />;
         },
         tabBarActiveTintColor: '#123458',
         tabBarInactiveTintColor: 'gray',
+        tabBarLabelStyle: {
+          fontSize: 12,
+        },
         tabBarStyle: {
-          paddingBottom: Platform.OS === 'android' ? 10 : 0,
-          height: Platform.OS === 'android' ? 60 : undefined,
+          paddingBottom: 5,
+          height: 50,
         },
       })}
     >

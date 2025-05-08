@@ -348,7 +348,6 @@ const styles = StyleSheet.create({
     color: '#123458',
     fontSize: 16,
     fontWeight: '600',
-    
   },
   headerImage: {
     width: '100%',
@@ -362,11 +361,10 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
     marginVertical: 15,
     borderRadius: 10,
-    
     overflow: 'hidden',
   },
   content: {
-    padding: 15,
+    padding: 10,
     paddingTop: 40,
   },
   headline: {

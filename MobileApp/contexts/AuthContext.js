@@ -13,9 +13,12 @@ export const AuthProvider = ({ children }) => {
     // Retrieve stored token on app load (if any)
     const loadUserToken = async () => {
       try {
-        const storedToken = await AsyncStorage.getItem('userToken');
-        if (storedToken) {
-          setUserToken(storedToken);  // Set the token if found
+        const storedUser = await AsyncStorage.getItem('user');
+        if (storedUser) {
+          const userObj = JSON.parse(storedUser);
+          if (userObj && userObj.token) {
+            setUserToken(userObj.token);  // Set the token if found
+          }
         }
       } catch (error) {
         console.error('Error retrieving token:', error);
