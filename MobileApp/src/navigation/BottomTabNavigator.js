@@ -37,9 +37,9 @@ const BottomTabNavigator = () => {
             fontSize: 12,
           },
           tabBarStyle: {
-            paddingBottom: 5,
+            paddingBottom: 0,
             height: 70,
-            marginBottom: 10,
+            marginBottom: 0,
             // Increased height and added marginBottom to move tab bar upwards
           },
         })}
@@ -63,12 +63,12 @@ const BottomTabNavigator = () => {
           const routeName = getFocusedRouteNameFromRoute(route) ?? '';
 
           return {
-            tabBarStyle: routeName === 'StoryScreen' ? { display: 'none', height: 0, paddingBottom: 0 } : { height: 70, marginBottom: 10 },
+            tabBarStyle: routeName === 'StoryScreen' ? { display: 'none', height: 0, paddingBottom: 0 } : { height: 80, marginBottom: 0 },
           };
         }}
       />
-      <Tab.Screen name="News" component={News} options={{ tabBarStyle: { height: 70, paddingBottom: 5, marginBottom: 10 } }} />
-      <Tab.Screen name="Profile" component={Profile} options={{ tabBarStyle: { height: 70, paddingBottom: 5, marginBottom: 10 } }} />
+      <Tab.Screen name="News" component={News} options={{ tabBarStyle: { height: 80, paddingBottom: 5, marginBottom: 0 } }} />
+      <Tab.Screen name="Profile" component={Profile} options={{ tabBarStyle: { height: 80, paddingBottom: 5, marginBottom: 0 } }} />
     </Tab.Navigator>
   );
 };
