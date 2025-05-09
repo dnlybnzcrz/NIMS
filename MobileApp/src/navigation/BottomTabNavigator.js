@@ -12,36 +12,38 @@ const Tab = createBottomTabNavigator();
 
 const BottomTabNavigator = () => {
   return (
-    <Tab.Navigator
-      screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarIcon: ({ focused, color }) => {
-          let iconName;
-          const iconSize = 24;
+      <Tab.Navigator
+        screenOptions={({ route }) => ({
+          headerShown: false,
+          tabBarIcon: ({ focused, color }) => {
+            let iconName;
+            const iconSize = 24;
 
-          if (route.name === 'Home') {
-            iconName = focused ? 'home' : 'home-outline';
-          } else if (route.name === 'News') {
-            iconName = focused ? 'newspaper' : 'newspaper-outline';
-          } else if (route.name === 'Profile') {
-            iconName = focused ? 'person' : 'person-outline';
-          } else if (route.name === 'AddReport') {
-            iconName = focused ? 'add-circle' : 'add-circle-outline';
-          }
+            if (route.name === 'Home') {
+              iconName = focused ? 'home' : 'home-outline';
+            } else if (route.name === 'News') {
+              iconName = focused ? 'newspaper' : 'newspaper-outline';
+            } else if (route.name === 'Profile') {
+              iconName = focused ? 'person' : 'person-outline';
+            } else if (route.name === 'AddReport') {
+              iconName = focused ? 'add-circle' : 'add-circle-outline';
+            }
 
-          return <Ionicons name={iconName} size={iconSize} color={color} />;
-        },
-        tabBarActiveTintColor: '#123458',
-        tabBarInactiveTintColor: 'gray',
-        tabBarLabelStyle: {
-          fontSize: 12,
-        },
-        tabBarStyle: {
-          paddingBottom: 5,
-          height: 50,
-        },
-      })}
-    >
+            return <Ionicons name={iconName} size={iconSize} color={color} />;
+          },
+          tabBarActiveTintColor: '#123458',
+          tabBarInactiveTintColor: 'gray',
+          tabBarLabelStyle: {
+            fontSize: 12,
+          },
+          tabBarStyle: {
+            paddingBottom: 5,
+            height: 70,
+            marginBottom: 10,
+            // Increased height and added marginBottom to move tab bar upwards
+          },
+        })}
+      >
       <Tab.Screen
         name="Home"
         component={HomeStackNavigator}
@@ -61,12 +63,12 @@ const BottomTabNavigator = () => {
           const routeName = getFocusedRouteNameFromRoute(route) ?? '';
 
           return {
-            tabBarStyle: routeName === 'StoryScreen' ? { display: 'none' } : {},
+            tabBarStyle: routeName === 'StoryScreen' ? { display: 'none', height: 0, paddingBottom: 0 } : { height: 70, paddingBottom: 5, marginBottom: 10 },
           };
         }}
       />
-      <Tab.Screen name="News" component={News} />
-      <Tab.Screen name="Profile" component={Profile} />
+      <Tab.Screen name="News" component={News} options={{ tabBarStyle: { height: 70, paddingBottom: 5, marginBottom: 10 } }} />
+      <Tab.Screen name="Profile" component={Profile} options={{ tabBarStyle: { height: 70, paddingBottom: 5, marginBottom: 10 } }} />
     </Tab.Navigator>
   );
 };
