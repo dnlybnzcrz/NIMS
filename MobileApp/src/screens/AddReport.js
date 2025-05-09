@@ -16,16 +16,81 @@ import {
   Image,
   ActivityIndicator,
 } from "react-native";
-import { Video } from "expo-av"; // Reverted to expo-av to fix undefined Video component error
+import { Video, Audio } from "expo-av"; // Reverted to expo-av to fix undefined Video component error
 import { Ionicons } from '@expo/vector-icons';
 import axios from "axios";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import * as ImagePicker from "expo-image-picker";
+import * as DocumentPicker from "expo-document-picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import ScreenWrapper from "../components/ScreenWrapper";
 
+
+// AudioPlayer component for audio files
+const AudioPlayer = ({ file, onRemove }) => {
+  const [sound, setSound] = React.useState(null);
+  const [isPlaying, setIsPlaying] = React.useState(false);
+
+  const playPauseAudio = async () => {
+    if (sound === null) {
+      const { sound: newSound } = await Audio.Sound.createAsync(
+        { uri: file.uri },
+        { shouldPlay: true }
+      );
+      setSound(newSound);
+      setIsPlaying(true);
+      newSound.setOnPlaybackStatusUpdate((status) => {
+        if (!status.isPlaying) {
+          setIsPlaying(false);
+        }
+      });
+    } else {
+      if (isPlaying) {
+        await sound.pauseAsync();
+        setIsPlaying(false);
+      } else {
+        await sound.playAsync();
+        setIsPlaying(true);
+      }
+    }
+  };
+
+  React.useEffect(() => {
+    return sound
+      ? () => {
+          sound.unloadAsync();
+        }
+      : undefined;
+  }, [sound]);
+
+  const fileName = file.name || (file.uri ? file.uri.split("/").pop() : "Unknown");
+
+  return (
+    <View key={file.uri || fileName} style={styles.mediaFileContainer}>
+      <Text style={styles.mediaFileName} numberOfLines={1}>
+        {fileName}
+      </Text>
+      <TouchableOpacity
+        style={styles.removeButtonAudio}
+        onPress={() => onRemove(file, "audio")}
+      >
+        <Text style={styles.removeButtonText}>×</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        onPress={playPauseAudio}
+        style={{ marginTop: 8, padding: 10, backgroundColor: '#2563eb', borderRadius: 8 }}
+      >
+        <Text style={{ color: 'white', fontWeight: 'bold' }}>
+          {isPlaying ? 'Pause' : 'Play'}
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
+};
+
 // 1. Split Component Into Smaller Parts - MediaPreview Component
 const MediaPreview = ({ media, onRemove, onPlayVideo }) => {
+  console.log("MediaPreview media prop:", media);
   return (
     <ScrollView
       horizontal={true}
@@ -85,19 +150,7 @@ const MediaPreview = ({ media, onRemove, onPlayVideo }) => {
           );
         } else {
           // Audio or other files
-          return (
-            <View key={file.uri + index} style={styles.mediaFileContainer}>
-              <Text style={styles.mediaFileName} numberOfLines={1}>
-                {file.name || file.uri.split("/").pop()}
-              </Text>
-              <TouchableOpacity
-                style={styles.removeButtonAudio}
-                onPress={() => onRemove(file, "audio")}
-              >
-                <Text style={styles.removeButtonText}>×</Text>
-              </TouchableOpacity>
-            </View>
-          );
+          return <AudioPlayer key={file.uri || index} file={file} onRemove={onRemove} />;
         }
       })}
     </ScrollView>
@@ -530,6 +583,57 @@ const AddReport = (props) => {
     }
   };
 
+  const audioFileSelectedHandler = async () => {
+    try {
+      setIsLoading(prev => ({...prev, mediaSelection: true}));
+
+      // Use DocumentPicker to open file system picker for audio files
+      // Updated to explicitly allow .m4a files on iOS by specifying mime types
+      const result = await DocumentPicker.getDocumentAsync({
+        type: Platform.OS === "ios" ? ["audio/m4a", "audio/mp4", "audio/x-m4a", "audio/*"] : "audio/*",
+        multiple: true,
+        copyToCacheDirectory: true,
+      });
+
+      console.log("DocumentPicker result:", result);
+
+      if (result.type === "cancel") {
+        setIsLoading(prev => ({...prev, mediaSelection: false}));
+        return;
+      }
+
+      // Handle result.assets array if present (like ImagePicker)
+      const selectedFiles = result.assets ? result.assets : [result];
+      let newAudio = [];
+
+      const isDuplicate = (list, uri) => list.some((f) => f.uri === uri);
+
+      selectedFiles.forEach((file) => {
+        // Defensive: ensure file.uri and file.name exist
+        if (!file.uri) return;
+        // Copy file object as is, similar to website approach
+        if (!isDuplicate(media.audio, file.uri)) {
+          newAudio.push(file);
+        }
+      });
+
+      setMedia(prev => ({
+        ...prev,
+        audio: [...prev.audio, ...newAudio],
+      }));
+
+      console.log("Selected audio files:", [...media.audio, ...newAudio]);
+    } catch (err) {
+      Alert.alert(
+        "Audio Selection Failed",
+        "There was a problem selecting audio files. Please try again."
+      );
+      console.error("Audio file selection error:", err);
+    } finally {
+      setIsLoading(prev => ({...prev, mediaSelection: false}));
+    }
+  };
+
   const validateForm = () => {
     const { title, lead, body, airDate } = formData;
     const errors = {};
@@ -598,27 +702,48 @@ const AddReport = (props) => {
 
       // Add all media files
       allMedia.forEach((file, index) => {
-        let mimeType = file.mimeType;
-        let fileName = file.name;
-        if (!mimeType) {
-          if (file.uri.endsWith(".mp4")) mimeType = "video/mp4";
-          else if (file.uri.endsWith(".mov")) mimeType = "video/quicktime";
-          else mimeType = "*/*";
+        // Append file object directly if it has name and uri, similar to website
+        if (file.name && file.uri) {
+          // Ensure uri has file:// prefix for local files (especially audio)
+          let fileUri = file.uri;
+          if (Platform.OS !== "web" && !fileUri.startsWith("file://")) {
+            fileUri = "file://" + fileUri;
+          }
+          // Fix mime type for .m4a files on iOS
+          let mimeType = file.mimeType || "application/octet-stream";
+          if (fileUri.toLowerCase().endsWith(".m4a")) {
+            mimeType = "audio/mp4"; // or "audio/x-m4a"
+          }
+          fd.append("media", {
+            uri: fileUri,
+            type: mimeType,
+            name: file.name,
+          });
+        } else {
+          // Fallback to previous logic
+          let mimeType = file.mimeType;
+          let fileName = file.name;
+          if (!mimeType) {
+            if (file.uri.endsWith(".mp4")) mimeType = "video/mp4";
+            else if (file.uri.endsWith(".mov")) mimeType = "video/quicktime";
+            else if (file.uri.endsWith(".mp3") || file.uri.endsWith(".wav") || file.uri.endsWith(".ogg") || file.uri.endsWith(".m4a") || file.uri.endsWith(".aac")) mimeType = "audio/mpeg";
+            else mimeType = "*/*";
+          }
+          if (!fileName) {
+            const uriParts = file.uri.split("/");
+            fileName = uriParts[uriParts.length - 1] || `file${index}`;
+          }
+          // Ensure uri has file:// prefix for local files (especially videos and audio)
+          let fileUri = file.uri;
+          if (Platform.OS !== "web" && !fileUri.startsWith("file://")) {
+            fileUri = "file://" + fileUri;
+          }
+          fd.append("media", {
+            uri: fileUri,
+            type: mimeType,
+            name: fileName,
+          });
         }
-        if (!fileName) {
-          const uriParts = file.uri.split("/");
-          fileName = uriParts[uriParts.length - 1] || `file${index}`;
-        }
-        // Ensure uri has file:// prefix for local files (especially videos)
-        let fileUri = file.uri;
-        if (Platform.OS !== "web" && !fileUri.startsWith("file://")) {
-          fileUri = "file://" + fileUri;
-        }
-        fd.append("media", {
-          uri: fileUri,
-          type: mimeType,
-          name: fileName,
-        });
       });
 
       const res = await axios.post(
@@ -802,6 +927,15 @@ const AddReport = (props) => {
                 {isLoading.mediaSelection ? "Uploading..." : "Choose Media Files"}
               </Text>
             </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.button, styles.buttonClose]} 
+              onPress={audioFileSelectedHandler}
+              disabled={isLoading.mediaSelection}
+            >
+              <Text style={styles.buttonText}>
+                {isLoading.mediaSelection ? "Uploading..." : "Choose Audio Files"}
+              </Text>
+            </TouchableOpacity>
             {/* Removed uploading progress text to show only modal */}
             <Modal
               transparent
@@ -832,6 +966,7 @@ const AddReport = (props) => {
             {(formData.title || formData.lead || formData.body) && (
               <Text style={styles.draftSavedText}>Draft saved automatically</Text>
             )}
+            <View style={{ height: 30 }} />
           </ScrollView>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
@@ -865,7 +1000,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 15,
     paddingTop: 20,
-    paddingBottom: 30,
+    paddingBottom: 140,
   },
   heading: {
     fontSize: 24,
@@ -1094,13 +1229,16 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingVertical: 16,
     marginTop: 12,
-    marginBottom: 8,
+    marginBottom: 12,
     alignItems: "center",
     shadowColor: "#2563eb",
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.4,
     shadowRadius: 12,
     elevation: 8,
+  },
+  buttonClose: {
+    marginTop: 4,
   },
   buttonDisabled: {
     backgroundColor: "#93c5fd",

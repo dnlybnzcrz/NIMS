@@ -32,7 +32,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F1EFEC",
   },
   statusBarBackground: {
-    height: Platform.OS === 'ios' ? 40 : 20,
+    height: Platform.OS === 'ios' ? 40 : 5,
     backgroundColor: "#F1EFEC",
     width: '100%',
     zIndex: 20,

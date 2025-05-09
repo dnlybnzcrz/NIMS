@@ -63,7 +63,7 @@ const BottomTabNavigator = () => {
           const routeName = getFocusedRouteNameFromRoute(route) ?? '';
 
           return {
-            tabBarStyle: routeName === 'StoryScreen' ? { display: 'none', height: 0, paddingBottom: 0 } : { height: 70, paddingBottom: 5, marginBottom: 10 },
+            tabBarStyle: routeName === 'StoryScreen' ? { display: 'none', height: 0, paddingBottom: 0 } : { height: 70, marginBottom: 10 },
           };
         }}
       />
