@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -6,7 +6,6 @@ import {
   ScrollView,
   TouchableOpacity,
   Button,
-  StyleSheet,
   Alert,
   Platform,
   Modal,
@@ -21,16 +20,19 @@ import axios from "axios";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import ScreenWrapper from "../components/ScreenWrapper";
+import styles from "../screens/AddReportStyles";
 
 // TagSelector component
 const TagSelector = ({ tags, selectedTags, onChange, visible, toggleVisibility }) => {
   const [searchText, setSearchText] = React.useState("");
 
-  const filteredTags = searchText.trim() === ""
-    ? tags
-    : tags.filter(tag =>
-        tag.name.toLowerCase().includes(searchText.toLowerCase())
-      );
+  const filteredTags = useMemo(() => {
+    return searchText.trim() === ""
+      ? tags
+      : tags.filter(tag =>
+          tag.name.toLowerCase().includes(searchText.toLowerCase())
+        );
+  }, [searchText, tags]);
 
   return (
     <>
@@ -113,8 +115,7 @@ const TagSelector = ({ tags, selectedTags, onChange, visible, toggleVisibility }
 };
 
 // DateSelector component
-const DateSelector = ({ date, onChange }) => {
-  // Defensive: ensure date is a valid Date object
+const DateSelector = ({ date, onChange, visible, toggleVisibility }) => {
   const safeDate = date instanceof Date ? date : new Date();
 
   return (
@@ -125,11 +126,24 @@ const DateSelector = ({ date, onChange }) => {
         </View>
         <TouchableOpacity
           style={[styles.dateInput, { flex: 1, marginLeft: 5, justifyContent: "center", alignItems: "center" }]}
-          onPress={() => onChange(true)}
+          onPress={() => toggleVisibility(true)}
         >
           <Text style={styles.dateText}>{safeDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
         </TouchableOpacity>
       </View>
+      {visible && (
+        <DateTimePicker
+          value={safeDate}
+          mode="datetime"
+          display="default"
+          onChange={(event, selectedDate) => {
+            toggleVisibility(false);
+            if (selectedDate) {
+              onChange(selectedDate);
+            }
+          }}
+        />
+      )}
     </>
   );
 };
@@ -143,6 +157,8 @@ const EditReport = (props) => {
     airDate: new Date(),
     selectedTag: [],
   });
+
+  const [storyInputHeight, setStoryInputHeight] = useState(140);
 
   const [uiState, setUiState] = useState({
     showTagDropdown: false,
@@ -161,7 +177,6 @@ const EditReport = (props) => {
   const [tags, setTags] = useState([]);
   const titleRef = useRef(null);
 
-  // Load existing post data from navigation params
   useEffect(() => {
     const loadPostData = () => {
       if (props.route && props.route.params && props.route.params.post) {
@@ -187,19 +202,19 @@ const EditReport = (props) => {
   }, [props.route, props.navigation]);
 
   const updateFormField = useCallback((field, value) => {
-    setFormData(prev => ({...prev, [field]: value}));
+    setFormData(prev => ({ ...prev, [field]: value }));
   }, []);
 
   const toggleUiState = useCallback((field, value) => {
-    setUiState(prev => ({...prev, [field]: value !== undefined ? value : !prev[field]}));
+    setUiState(prev => ({ ...prev, [field]: value !== undefined ? value : !prev[field] }));
   }, []);
 
   const playVideo = useCallback((uri) => {
-    setUiState(prev => ({...prev, videoUri: uri, showVideoModal: true}));
+    setUiState(prev => ({ ...prev, videoUri: uri, showVideoModal: true }));
   }, []);
 
   const closeVideoModal = useCallback(() => {
-    setUiState(prev => ({...prev, showVideoModal: false, videoUri: null}));
+    setUiState(prev => ({ ...prev, showVideoModal: false, videoUri: null }));
   }, []);
 
   const validateForm = () => {
@@ -222,7 +237,7 @@ const EditReport = (props) => {
       return;
     }
     try {
-      setIsLoading(prev => ({...prev, upload: true}));
+      setIsLoading(prev => ({ ...prev, upload: true }));
       toggleUiState("uploadProgress", 0);
       const user = JSON.parse(await AsyncStorage.getItem("user"));
       if (!user || !user.token) {
@@ -264,7 +279,7 @@ const EditReport = (props) => {
     } catch (error) {
       Alert.alert("Upload Error", "An error occurred while uploading the report.");
     } finally {
-      setIsLoading(prev => ({...prev, upload: false}));
+      setIsLoading(prev => ({ ...prev, upload: false }));
       toggleUiState("uploadProgress", 0);
     }
   };
@@ -279,7 +294,9 @@ const EditReport = (props) => {
         style={{ flex: 1 }}
       >
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <ScrollView contentContainerStyle={styles.container}>
+          <ScrollView
+            contentContainerStyle={styles.fullScreenContainer}
+          >
             <View style={styles.headerContainer}>
               <TouchableOpacity
                 style={styles.backButton}
@@ -306,6 +323,7 @@ const EditReport = (props) => {
               onChangeText={(text) => updateFormField("title", text)}
               placeholder="Enter headline"
               multiline
+              scrollEnabled={false}
             />
 
             <Text style={styles.label}>Tags</Text>
@@ -322,36 +340,25 @@ const EditReport = (props) => {
               date={formData.airDate}
               onChange={(show) => toggleUiState("showDatePicker", show)}
             />
-            {uiState.showDatePicker && (
-              <DateTimePicker
-                value={formData.airDate}
-                mode="datetime"
-                display="default"
-                onChange={(event, selectedDate) => {
-                  toggleUiState("showDatePicker", false);
-                  if (selectedDate) {
-                    updateFormField("airDate", selectedDate);
-                  }
-                }}
-              />
-            )}
 
             <Text style={styles.label}>Lead</Text>
             <TextInput
-              style={[styles.input, { height: 80 }]}
+              style={styles.input}
               value={formData.lead}
               onChangeText={(text) => updateFormField("lead", text)}
               placeholder="Enter lead"
               multiline
+              scrollEnabled={false}
             />
 
             <Text style={styles.label}>Story</Text>
             <TextInput
-              style={[styles.input, { height: 140 }]}
+              style={styles.input}
               value={formData.body}
               onChangeText={(text) => updateFormField("body", text)}
               placeholder="Enter story"
               multiline
+              scrollEnabled={false}
             />
 
             <Text style={styles.label}>Remarks</Text>
@@ -370,11 +377,16 @@ const EditReport = (props) => {
               </View>
             )}
 
-            <Button
-              title="Update Report"
+            <TouchableOpacity
+              style={[
+                styles.button,
+                isLoading.upload && styles.buttonDisabled,
+              ]}
               onPress={fileUploadHandler}
               disabled={isLoading.upload}
-            />
+            >
+              <Text style={styles.buttonText}>Update Report</Text>
+            </TouchableOpacity>
           </ScrollView>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
@@ -419,8 +431,5 @@ const EditReport = (props) => {
     </ScreenWrapper>
   );
 };
-
-const styles = require("../screens/AddReportStyles").default;
-
 
 export default EditReport;

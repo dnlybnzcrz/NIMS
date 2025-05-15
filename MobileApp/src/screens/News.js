@@ -310,9 +310,22 @@ const News = () => {
     const authorIdStr = item.author && (item.author._id || item.author.id) ? String(item.author._id || item.author.id).toLowerCase() : '';
     const isAuthor = currentUserIdStr && (authorUsernameStr === currentUserIdStr || authorIdStr === currentUserIdStr);
 
+    // Determine approval status label and style based on boolean approved field
+    const isApproved = item.approved === true;
+    let approvalLabel = '';
+    let approvalLabelStyle = {};
+    if (isApproved) {
+      approvalLabel = 'Approved';
+      approvalLabelStyle = styles.approvedLabel;
+    } else {
+      approvalLabel = 'Pending Approval';
+      approvalLabelStyle = styles.pendingLabel;
+    }
+
     return (
       <View style={styles.newsItem}>
         <Text style={styles.source}>{authorName} - {station}</Text>
+        <Text style={approvalLabelStyle}>{approvalLabel}</Text>
         <Text style={styles.lead}>{item.lead}</Text>
         <Text style={styles.tags}>{tags}</Text>
         <Text style={styles.date}>{moment(item.dateCreated).format('MM/DD/YYYY')}</Text>
@@ -340,6 +353,128 @@ const News = () => {
       </View>
     );
   };
+  
+  // Add styles for approval labels
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      padding: 15,
+      backgroundColor: '#f9f9f9',
+    },
+    title: {
+      fontSize: 28,
+      fontWeight: '700',
+      marginBottom: 15,
+      textAlign: 'center',
+      color: '#222',
+    },
+    searchInput: {
+      borderColor: '#bbb',
+      borderWidth: 1,
+      borderRadius: 25,
+      paddingVertical: 10,
+      paddingHorizontal: 20,
+      marginBottom: 15,
+      fontSize: 16,
+      backgroundColor: '#fff',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.1,
+      shadowRadius: 3,
+      elevation: 2,
+    },
+    newsItem: {
+      backgroundColor: '#fff',
+      borderRadius: 12,
+      padding: 12,
+      marginBottom: 8,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.12,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    source: {
+      fontWeight: '700',
+      fontSize: 16,
+      marginBottom: 6,
+      color: '#333',
+    },
+    lead: {
+      fontSize: 15,
+      marginBottom: 8,
+      color: '#444',
+    },
+    tags: {
+      fontStyle: 'italic',
+      marginBottom: 8,
+      color: '#666',
+    },
+    date: {
+      color: '#888',
+      fontSize: 13,
+    },
+    time: {
+      color: '#888',
+      fontSize: 13,
+      marginBottom: 8,
+    },
+    mediaButton: {
+      backgroundColor: '#007bff',
+      paddingVertical: 6,
+      paddingHorizontal: 12,
+      borderRadius: 20,
+      alignSelf: 'flex-start',
+      marginBottom: 10,
+    },
+    mediaButtonText: {
+      color: 'white',
+      fontWeight: '600',
+      fontSize: 14,
+    },
+    noMedia: {
+      color: '#bbb',
+      marginBottom: 10,
+      fontStyle: 'italic',
+    },
+    remarks: {
+      marginBottom: 10,
+      color: '#555',
+      fontSize: 14,
+    },
+    actions: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+    },
+    actionButton: {
+      marginLeft: 15,
+      paddingVertical: 6,
+      paddingHorizontal: 14,
+      borderRadius: 20,
+      backgroundColor: '#e9ecef',
+    },
+    actionText: {
+      color: '#007bff',
+      fontWeight: '600',
+      fontSize: 14,
+    },
+    emptyText: {
+      textAlign: 'center',
+      marginTop: 30,
+      color: '#aaa',
+      fontSize: 16,
+    },
+    approvedLabel: {
+      color: 'green',
+      fontWeight: '700',
+      marginBottom: 6,
+    },
+    pendingLabel: {
+      color: 'orange',
+      fontWeight: '700',
+      marginBottom: 6,
+    },
+  });
 
   return (
     <ScreenWrapper>

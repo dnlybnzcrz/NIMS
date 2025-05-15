@@ -2,7 +2,6 @@ import { StyleSheet } from "react-native";
 
 const AddReportStyles = StyleSheet.create({
   fullScreenContainer: {
-    flex: 1,
     paddingHorizontal: 15,
     paddingTop: 20,
     paddingBottom: 140,
@@ -305,6 +304,13 @@ const AddReportStyles = StyleSheet.create({
     fontSize: 16,
     marginLeft: 6,
     fontWeight: "600",
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "white",
+    marginBottom: 6,
+    marginTop: 12,
   },
 });
 

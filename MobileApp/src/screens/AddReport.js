@@ -285,6 +285,9 @@ const AddReport = (props) => {
     airDate: new Date(),
     selectedTag: [],
   });
+
+  // New state for dynamic height of story input
+  // const [storyInputHeight, setStoryInputHeight] = useState(150);
   
   const [media, setMedia] = useState({
     audio: [],
@@ -957,14 +960,16 @@ const AddReport = (props) => {
               value={formData.lead}
               onChangeText={(text) => updateFormField("lead", text)}
               multiline
+              scrollEnabled={false}
             />
             <TextInput
               placeholder="Story"
               placeholderTextColor="#6b7280"
-              style={[styles.input, { height: 150 }]}
+              style={styles.input}
               value={formData.body}
               onChangeText={(text) => updateFormField("body", text)}
               multiline
+              scrollEnabled={false}
             />
             <TextInput
               placeholder="Remarks (optional)"

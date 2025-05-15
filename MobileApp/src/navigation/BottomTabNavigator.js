@@ -52,9 +52,7 @@ const BottomTabNavigator = () => {
           return {
             tabPress: e => {
               e.preventDefault();
-              if (!navigation.isFocused()) {
-                navigation.navigate('Home');
-              }
+              navigation.navigate('Home', { screen: 'Homepage' });
               eventEmitter.emit('scrollToTopAndRefresh');
             },
           };
