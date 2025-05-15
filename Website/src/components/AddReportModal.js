@@ -21,7 +21,7 @@ const AddReportModal = (props) => {
 
     const config = {
         headers: {
-            'Content-Type': 'mulitpart/form-data',
+            'Content-Type': 'multipart/form-data',
             Authorization: "Bearer " + JSON.parse(localStorage.getItem("user")).token,
         },
     };

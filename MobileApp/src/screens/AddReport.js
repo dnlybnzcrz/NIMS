@@ -312,6 +312,67 @@ const AddReport = (props) => {
   const [tags, setTags] = useState([]);
   const titleRef = useRef(null);
 
+  // Load draft from navigation params if available
+  useEffect(() => {
+    if (props.route && props.route.params && props.route.params.draft) {
+      const draft = props.route.params.draft;
+      // Map draft fields to formData structure
+      setFormData({
+        title: draft.title || "",
+        lead: draft.lead || "",
+        body: draft.body || "",
+        remarks: draft.remarks || "",
+        airDate: draft.forDate ? new Date(draft.forDate) : new Date(),
+        selectedTag: Array.isArray(draft.tags) ? draft.tags : (typeof draft.tags === 'string' ? draft.tags.split(',').map(t => t.trim()) : []),
+      });
+      // Normalize media files from draft.files to media state
+      const normalizedMedia = { audio: [], images: [], videos: [] };
+      const prefix = Platform.OS !== "web" ? "file://" : "";
+      if (draft.files) {
+        if (Array.isArray(draft.files.audios)) {
+          normalizedMedia.audio = draft.files.audios.map(file => {
+            let uri = file.uri || file;
+            if (uri && !uri.startsWith("file://") && prefix) {
+              uri = prefix + uri;
+            }
+            return {
+              uri,
+              name: file.name || (typeof file === 'string' ? file.split('/').pop() : 'audio.mp3'),
+              mimeType: file.mimeType || 'audio/mpeg',
+            };
+          });
+        }
+        if (Array.isArray(draft.files.images)) {
+          normalizedMedia.images = draft.files.images.map(file => {
+            let uri = file.uri || file;
+            if (uri && !uri.startsWith("file://") && prefix) {
+              uri = prefix + uri;
+            }
+            return {
+              uri,
+              name: file.name || (typeof file === 'string' ? file.split('/').pop() : 'image.jpg'),
+              mimeType: file.mimeType || 'image/jpeg',
+            };
+          });
+        }
+        if (Array.isArray(draft.files.videos)) {
+          normalizedMedia.videos = draft.files.videos.map(file => {
+            let uri = file.uri || file;
+            if (uri && !uri.startsWith("file://") && prefix) {
+              uri = prefix + uri;
+            }
+            return {
+              uri,
+              name: file.name || (typeof file === 'string' ? file.split('/').pop() : 'video.mp4'),
+              mimeType: file.mimeType || 'video/mp4',
+            };
+          });
+        }
+      }
+      setMedia(normalizedMedia);
+    }
+  }, [props.route]);
+  
   // Handler to update form fields
   const updateFormField = useCallback((field, value) => {
     setFormData(prev => ({...prev, [field]: value}));

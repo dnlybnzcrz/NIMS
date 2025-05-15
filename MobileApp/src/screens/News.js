@@ -1,29 +1,116 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
-import ScreenWrapper from '../components/ScreenWrapper';
-import { AuthContext } from '../../contexts/AuthContext';
 import axios from 'axios';
 import moment from 'moment';
-import AddReport from './AddReport';
-import StoryScreen from './StoryScreen';
-import MediaModal from '../components/MediaModal';
+import ScreenWrapper from '../components/ScreenWrapper';
+import { AuthContext } from '../../contexts/AuthContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation } from '@react-navigation/native';
+
+// Helper function to decode JWT token payload
+const decodeBase64 = (str) => {
+  try {
+    return decodeURIComponent(
+      atob(str)
+        .split('')
+        .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+  } catch (e) {
+    return null;
+  }
+};
+
+const decodeJWT = (token) => {
+  if (!token) return null;
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeBase64(base64);
+    return jsonPayload ? JSON.parse(jsonPayload) : null;
+  } catch (error) {
+    console.error('Failed to decode JWT token:', error);
+    return null;
+  }
+};
+
+// Polyfill for atob in React Native
+const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+
+function atob(input = '') {
+  let str = input.replace(/=+$/, '');
+  let output = '';
+
+  if (str.length % 4 === 1) {
+    throw new Error("'atob' failed: The string to be decoded is not correctly encoded.");
+  }
+  for (
+    let bc = 0, bs = 0, buffer, i = 0;
+    (buffer = str.charAt(i++));
+    ~buffer && ((bs = bc % 4 ? bs * 64 + buffer : buffer), bc++ % 4)
+      ? (output += String.fromCharCode(255 & (bs >> ((-2 * bc) & 6))))
+      : 0
+  ) {
+    buffer = chars.indexOf(buffer);
+  }
+  return output;
+}
+
+import { useFocusEffect } from '@react-navigation/native';
+import eventEmitter from '../utils/EventEmitter';
 
 const News = () => {
+  const navigation = useNavigation();
   const { userToken } = useContext(AuthContext);
   const [newsList, setNewsList] = useState([]);
   const [filteredNews, setFilteredNews] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  // Removed add report state as per user request
-  // const [isAddReportVisible, setIsAddReportVisible] = useState(false);
-  const [isEditStoryVisible, setIsEditStoryVisible] = useState(false);
-  const [selectedNewsItem, setSelectedNewsItem] = useState(null);
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [isMediaModalVisible, setIsMediaModalVisible] = useState(false);
   const [selectedMedia, setSelectedMedia] = useState(null);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
-  const itemsPerPage = 20;
+  const itemsPerPage = 10;
   const [refreshing, setRefreshing] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
+  const [currentUserId, setCurrentUserId] = useState(null);
+
+  // Load cached news on mount
+  useEffect(() => {
+    const loadCachedNews = async () => {
+      try {
+        const cachedNews = await AsyncStorage.getItem('cachedNews');
+        if (cachedNews) {
+          const parsedNews = JSON.parse(cachedNews);
+          setNewsList(parsedNews);
+          setFilteredNews(parsedNews);
+        }
+      } catch (error) {
+        console.error('Failed to load cached news:', error);
+      }
+    };
+    loadCachedNews();
+  }, []);
+
+  // Refresh news when tab is reselected via event emitter
+  useEffect(() => {
+    const refreshListener = () => {
+      setPage(1);
+      // Delay fetchNews call to ensure page state is updated
+      setTimeout(() => {
+        fetchNews(1);
+      }, 0);
+    };
+    eventEmitter.on('scrollToTopAndRefresh', refreshListener);
+    return () => {
+      eventEmitter.off('scrollToTopAndRefresh', refreshListener);
+    };
+  }, [currentUserId]);
+
+  // Decode user info from token
+  const userInfo = decodeJWT(userToken);
+  // Prefer username if available, else fallback to _id or id
+  const userIdFromToken = userInfo ? userInfo.username || userInfo._id || userInfo.id || userInfo.userId : null;
 
   const config = {
     headers: {
@@ -32,38 +119,91 @@ const News = () => {
   };
 
   useEffect(() => {
-    console.log('User token in News screen:', userToken);
-  }, [userToken]);
+    // Set currentUserId directly from decoded token userIdFromToken
+    if (userIdFromToken) {
+      setCurrentUserId(userIdFromToken);
+    }
+  }, [userIdFromToken]);
 
   useEffect(() => {
-    fetchNews();
-  }, [page]);
+    if (currentUserId) {
+      fetchNews(page);
+    }
+  }, [page, currentUserId]);
 
   useEffect(() => {
-    filterNews(searchQuery);
-  }, [newsList, searchQuery]);
+    const handler = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300); // debounce delay 300ms
 
-  const fetchNews = async () => {
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchQuery]);
+
+  useEffect(() => {
+    filterNews(debouncedSearchQuery);
+  }, [newsList, debouncedSearchQuery]);
+
+  const fetchNews = async (pageToFetch = 1) => {
+    if (!currentUserId) {
+      // Wait until currentUserId is loaded
+      return;
+    }
     setLoading(true);
     try {
       let res;
       if (userToken) {
-        res = await axios.get(`https://api.radiopilipinas.online/nims/view?page=${page}&limit=${itemsPerPage}`, {
+        res = await axios.get(`https://api.radiopilipinas.online/nims/view?page=${pageToFetch}&limit=${itemsPerPage}`, {
           headers: { Authorization: 'Bearer ' + userToken }
         });
       } else {
-        res = await axios.get(`https://api.radiopilipinas.online/nims/view?page=${page}&limit=${itemsPerPage}`);
+        res = await axios.get(`https://api.radiopilipinas.online/nims/view?page=${pageToFetch}&limit=${itemsPerPage}`);
       }
-      if (page === 1) {
-        setNewsList(res.data.newsDataList);
+      let newsData = res.data.newsDataList;
+
+      // Filter news to include approved or pending posts authored by current user
+      newsData = newsData.filter(news => {
+        if (!news.author) return false;
+        const authorUsername = news.author.username || '';
+        const authorId = news.author._id || news.author.id || '';
+        const currentUserIdStr = String(currentUserId).toLowerCase();
+        const authorUsernameStr = String(authorUsername).toLowerCase();
+        const authorIdStr = String(authorId).toLowerCase();
+        // Match if currentUserId matches either username or id exactly or partially
+        if (authorUsernameStr === currentUserIdStr || authorIdStr === currentUserIdStr) {
+          return true;
+        }
+        if (authorUsernameStr.includes(currentUserIdStr) || currentUserIdStr.includes(authorUsernameStr)) {
+          return true;
+        }
+        if (authorIdStr.includes(currentUserIdStr) || currentUserIdStr.includes(authorIdStr)) {
+          return true;
+        }
+        return false;
+      });
+
+      if (newsData.length === 0) {
+        // Remove fallback to all approved news, show empty list if no user posts
+        newsData = [];
+      }
+
+      if (pageToFetch === 1) {
+        setNewsList(newsData);
+        // Cache first 10 news items
+        try {
+          const newsToCache = newsData.slice(0, 10);
+          AsyncStorage.setItem('cachedNews', JSON.stringify(newsToCache));
+        } catch (error) {
+          console.error('Failed to cache news:', error);
+        }
       } else {
-        setNewsList(prev => [...prev, ...res.data.newsDataList]);
+        setNewsList(prev => [...prev, ...newsData]);
       }
       if (res.data.totalCount !== undefined) {
         setTotalCount(res.data.totalCount);
       }
     } catch (error) {
-      console.log(error);
       if (error.response && error.response.status === 401) {
         Alert.alert('Authentication Error', 'You must be logged in to view news.');
       } else {
@@ -76,7 +216,6 @@ const News = () => {
   };
 
   const filterNews = (query) => {
-    console.log('Filtering news with query:', query);
     const lowerCaseQuery = query.toLowerCase();
     const filtered = newsList.filter(news => {
       const authorFirstName = news.author && news.author.name ? news.author.name.first : '';
@@ -93,28 +232,15 @@ const News = () => {
         (news.dateCreated && moment(news.dateCreated).format('MM/DD/YYYY, h:mm:ss a').includes(lowerCaseQuery))
       );
     });
-    console.log('Filtered news count:', filtered.length);
     setFilteredNews(filtered);
   };
 
-  // Removed handleAddReport function as per user request
-  // const handleAddReport = (newReport) => {
-  //   setNewsList(prev => [newReport, ...prev]);
-  //   setIsAddReportVisible(false);
-  // };
-
-  const handleEdit = (newsItem) => {
-    setSelectedNewsItem(newsItem);
-    setIsEditStoryVisible(true);
-  };
-
-  const handleUpdateNews = (updatedNews) => {
-    setNewsList(prev =>
-      prev.map(news => (news._id === updatedNews._id ? updatedNews : news))
-    );
-    setIsEditStoryVisible(false);
-    setSelectedNewsItem(null);
-  };
+ const handleEdit = (newsItem) => {
+  navigation.navigate('Home', {
+    screen: 'EditReport',
+    params: { post: newsItem },
+  });
+}
 
   const handleDelete = (id) => {
     Alert.alert(
@@ -157,9 +283,11 @@ const News = () => {
     }
   };
 
+  // Removed duplicate fetchNews function to fix redeclaration error
+
   const onRefresh = () => {
-    setRefreshing(true);
     setPage(1);
+    fetchNews(1);
   };
 
   const renderItem = ({ item }) => {
@@ -175,6 +303,12 @@ const News = () => {
       ((item.files.audios && item.files.audios.length > 0) ||
       (item.files.images && item.files.images.length > 0) ||
       (item.files.videos && item.files.videos.length > 0));
+
+    // Determine if current user is the author of this news item
+    const currentUserIdStr = currentUserId ? String(currentUserId).toLowerCase() : '';
+    const authorUsernameStr = item.author && item.author.username ? String(item.author.username).toLowerCase() : '';
+    const authorIdStr = item.author && (item.author._id || item.author.id) ? String(item.author._id || item.author.id).toLowerCase() : '';
+    const isAuthor = currentUserIdStr && (authorUsernameStr === currentUserIdStr || authorIdStr === currentUserIdStr);
 
     return (
       <View style={styles.newsItem}>
@@ -192,12 +326,16 @@ const News = () => {
         )}
         <Text style={styles.remarks}>{item.remarks}</Text>
         <View style={styles.actions}>
-          <TouchableOpacity style={styles.actionButton} onPress={() => handleEdit(item)}>
-            <Text style={styles.actionText}>Edit</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton} onPress={() => handleDelete(item._id)}>
-            <Text style={[styles.actionText, { color: 'red' }]}>Delete</Text>
-          </TouchableOpacity>
+          {isAuthor && (
+            <>
+              <TouchableOpacity style={styles.actionButton} onPress={() => handleEdit(item)}>
+                <Text style={styles.actionText}>Edit</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.actionButton} onPress={() => handleDelete(item._id)}>
+                <Text style={[styles.actionText, { color: 'red' }]}>Delete</Text>
+              </TouchableOpacity>
+            </>
+          )}
         </View>
       </View>
     );
@@ -214,7 +352,7 @@ const News = () => {
           value={searchQuery}
           onChangeText={setSearchQuery}
         />
-        {loading && page === 1 ? (
+        {(loading && page === 1) || refreshing ? (
           <ActivityIndicator size="large" color="#0000ff" />
         ) : (
           <FlatList
@@ -225,17 +363,10 @@ const News = () => {
             onEndReachedThreshold={0.5}
             refreshing={refreshing}
             onRefresh={onRefresh}
-            ListEmptyComponent={<Text style={styles.emptyText}>No news found 😢</Text>}
+            ListEmptyComponent={<Text style={styles.emptyText}>Loading..... 😢</Text>}
           />
         )}
-        {isEditStoryVisible && selectedNewsItem && (
-          <StoryScreen
-            visible={isEditStoryVisible}
-            onClose={() => setIsEditStoryVisible(false)}
-            content={selectedNewsItem}
-            onStoryUpdated={handleUpdateNews}
-          />
-        )}
+        {/* Removed StoryScreen modal as editing is now done in AddReport screen */}
         {isMediaModalVisible && selectedMedia && (
           <MediaModal
             visible={isMediaModalVisible}

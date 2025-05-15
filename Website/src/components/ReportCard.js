@@ -277,32 +277,37 @@ const ReportCard = ({ report, handleShowModal, handleDeleteReport, handleShowMed
         <div className="audio-section">
           <h6>Audio:</h6>
           <div className="audio-list">
-            {report.files.audios.map((audio, index) => {
-              const audioUrl = `https://pbs-nims.s3.ap-southeast-1.amazonaws.com${audio}`;
-              return (
-                <audio
-                  key={index}
-                  controls
-                  draggable="true"
-                  onDragStart={(e) => {
-                    e.dataTransfer.setData("DownloadURL", `audio/mpeg:${audioUrl}`);
-                  }}
-                  onClick={() =>
-                    handleShowMediaModal(
-                      report.files.audios.map((a) => ({
-                        type: "audio",
-                        url: `https://pbs-nims.s3.ap-southeast-1.amazonaws.com${a}`,
-                      })),
-                      "audio",
-                      index
-                    )
-                  }
-                >
-                  <source src={audioUrl} type="audio/mpeg" />
-                  Your browser does not support the audio tag.
-                </audio>
-              );
-            })}
+{report.files.audios.map((audio, index) => {
+  const audioUrl = `https://pbs-nims.s3.ap-southeast-1.amazonaws.com${audio}`;
+  // Determine mime type based on file extension
+  let mimeType = "audio/mpeg";
+  if (audio.toLowerCase().endsWith(".m4a")) {
+    mimeType = "audio/mp4";
+  }
+  return (
+    <audio
+      key={index}
+      controls
+      draggable="true"
+      onDragStart={(e) => {
+        e.dataTransfer.setData(`DownloadURL`, `${mimeType}:${audioUrl}`);
+      }}
+      onClick={() =>
+        handleShowMediaModal(
+          report.files.audios.map((a) => ({
+            type: "audio",
+            url: `https://pbs-nims.s3.ap-southeast-1.amazonaws.com${a}`,
+          })),
+          "audio",
+          index
+        )
+      }
+    >
+      <source src={audioUrl} type={mimeType} />
+      Your browser does not support the audio tag.
+    </audio>
+  );
+})}
           </div>
         </div>
       )}

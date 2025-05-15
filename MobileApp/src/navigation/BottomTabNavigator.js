@@ -67,7 +67,23 @@ const BottomTabNavigator = () => {
           };
         }}
       />
-      <Tab.Screen name="News" component={News} options={{ tabBarStyle: { height: 80, paddingBottom: 5, marginBottom: 0 } }} />
+      <Tab.Screen
+        name="News"
+        component={News}
+        listeners={({ navigation, route }) => {
+          const eventEmitter = require('../utils/EventEmitter').default;
+          return {
+            tabPress: e => {
+              e.preventDefault();
+              if (!navigation.isFocused()) {
+                navigation.navigate('News');
+              }
+              eventEmitter.emit('scrollToTopAndRefresh');
+            },
+          };
+        }}
+        options={{ tabBarStyle: { height: 80, paddingBottom: 5, marginBottom: 0 } }}
+      />
       <Tab.Screen name="Profile" component={Profile} options={{ tabBarStyle: { height: 80, paddingBottom: 5, marginBottom: 0 } }} />
     </Tab.Navigator>
   );
