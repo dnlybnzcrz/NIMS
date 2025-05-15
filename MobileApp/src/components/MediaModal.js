@@ -123,7 +123,7 @@ const MediaModal = ({ show, handleClose, mediaItems, initialIndex = 0 }) => {
   };
 
   return (
-    <Modal visible={show} animationType="slide" onRequestClose={handleClose} transparent={false}>
+    <Modal visible={show} animationType="fade" onRequestClose={handleClose} transparent={false} key={show ? "modal-visible" : "modal-hidden"}>
       <View style={styles.container}>
         <Text style={styles.sectionTitle}>
           {currentMedia.type.charAt(0).toUpperCase() + currentMedia.type.slice(1)} {currentIndex + 1} / {combinedMedia.length}

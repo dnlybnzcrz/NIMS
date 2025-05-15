@@ -8,6 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import MediaModal from '../components/MediaModal';
+import ReportCardNews from '../components/ReportCardNews';
 
 // Helper function to decode JWT token payload
 const decodeBase64 = (str) => {
@@ -58,7 +59,6 @@ function atob(input = '') {
   return output;
 }
 
-import { useFocusEffect } from '@react-navigation/native';
 import eventEmitter from '../utils/EventEmitter';
 
 const News = () => {
@@ -185,6 +185,24 @@ const News = () => {
         return false;
       });
 
+      // Map newsData to ensure status property is set for each news item
+      newsData = newsData.map(news => {
+        let status = 'pending';
+        if (news.status && typeof news.status === 'string') {
+          status = news.status.toLowerCase() === 'approved' ? 'approved' : 'pending';
+        } else if (news.approvalStatus && typeof news.approvalStatus === 'string') {
+          status = news.approvalStatus.toLowerCase() === 'approved' ? 'approved' : 'pending';
+        } else if (news.isApproved === true) {
+          status = 'approved';
+        } else if (news.approved === true) {
+          status = 'approved';
+        }
+        return {
+          ...news,
+          status,
+        };
+      });
+
       if (newsData.length === 0) {
         // Remove fallback to all approved news, show empty list if no user posts
         newsData = [];
@@ -292,69 +310,45 @@ const News = () => {
     fetchNews(1);
   };
 
-  const renderItem = ({ item }) => {
-    const authorName = item.author && item.author.name
-      ? `${item.author.name.first || 'N/A'} ${item.author.name.last || 'N/A'}`
-      : 'N/A';
-    const station = item.author && item.author.station ? item.author.station : 'N/A';
-    const tags = item.tags && Array.isArray(item.tags) && item.tags.length > 0
-      ? item.tags.join(', ')
-      : 'No tags selected';
-
-    const hasMedia = item.files &&
-      ((item.files.audios && item.files.audios.length > 0) ||
-      (item.files.images && item.files.images.length > 0) ||
-      (item.files.videos && item.files.videos.length > 0));
-
-    // Determine if current user is the author of this news item
-    const currentUserIdStr = currentUserId ? String(currentUserId).toLowerCase() : '';
-    const authorUsernameStr = item.author && item.author.username ? String(item.author.username).toLowerCase() : '';
-    const authorIdStr = item.author && (item.author._id || item.author.id) ? String(item.author._id || item.author.id).toLowerCase() : '';
-    const isAuthor = currentUserIdStr && (authorUsernameStr === currentUserIdStr || authorIdStr === currentUserIdStr);
-
-    // Determine approval status label and style based on boolean approved field
-    const isApproved = item.approved === true;
-    let approvalLabel = '';
-    let approvalLabelStyle = {};
-    if (isApproved) {
-      approvalLabel = 'Approved';
-      approvalLabelStyle = styles.approvedLabel;
-    } else {
-      approvalLabel = 'Pending Approval';
-      approvalLabelStyle = styles.pendingLabel;
-    }
-
-    return (
-      <View style={styles.newsItem}>
-        <Text style={styles.source}>{authorName} - {station}</Text>
-        <Text style={approvalLabelStyle}>{approvalLabel}</Text>
-        <Text style={styles.lead}>{item.lead}</Text>
-        <Text style={styles.tags}>{tags}</Text>
-        <Text style={styles.date}>{moment(item.dateCreated).format('MM/DD/YYYY')}</Text>
-        <Text style={styles.time}>{moment(item.dateCreated).format('h:mm:ss a')}</Text>
-        {hasMedia ? (
-          <TouchableOpacity style={styles.mediaButton} onPress={() => openMediaModal(item.files)}>
-            <Text style={styles.mediaButtonText}>View Media</Text>
-          </TouchableOpacity>
-        ) : (
-          <Text style={styles.noMedia}>No Media</Text>
-        )}
-        <Text style={styles.remarks}>{item.remarks}</Text>
-        <View style={styles.actions}>
-          {isAuthor && (
-            <>
-              <TouchableOpacity style={styles.actionButton} onPress={() => handleEdit(item)}>
-                <Text style={styles.actionText}>Edit</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.actionButton} onPress={() => handleDelete(item._id)}>
-                <Text style={[styles.actionText, { color: 'red' }]}>Delete</Text>
-              </TouchableOpacity>
-            </>
-          )}
-        </View>
-      </View>
-    );
-  };
+const renderItem = ({ item }) => {
+  return (
+    <ReportCardNews
+      report={item}
+      handleShowModal={(report) => {
+        // Implement modal show logic if needed
+        openMediaModal(report.files);
+      }}
+      handleDeleteReport={(id) => {
+        Alert.alert(
+          'Confirm Delete',
+          'Are you sure you want to delete this news item?',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Delete',
+              style: 'destructive',
+              onPress: async () => {
+                try {
+                  await axios.delete(`https://api.radiopilipinas.online/nims/delete/${id}`, config);
+                  setNewsList(prev => prev.filter(news => news._id !== id));
+                  setFilteredNews(prev => prev.filter(news => news._id !== id));
+                } catch (error) {
+                  console.log(error);
+                  Alert.alert('Error', 'Failed to delete news item.');
+                }
+              },
+            },
+          ]
+        );
+      }}
+      handleShowMediaModal={openMediaModal}
+      searchQuery={debouncedSearchQuery}
+      userRole={null} // Pass userRole if available
+      currentUserId={currentUserId}
+      handleEdit={handleEdit}
+    />
+  );
+};
   
   // Add styles for approval labels
 const styles = StyleSheet.create({
@@ -555,6 +549,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '700',
+    marginTop: 20,
     marginBottom: 15,
     textAlign: 'center',
     color: '#222',
