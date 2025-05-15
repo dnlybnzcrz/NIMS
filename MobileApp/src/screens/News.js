@@ -6,6 +6,8 @@ import ScreenWrapper from '../components/ScreenWrapper';
 import { AuthContext } from '../../contexts/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
+import MediaModal from '../components/MediaModal';
 
 // Helper function to decode JWT token payload
 const decodeBase64 = (str) => {
@@ -355,138 +357,168 @@ const News = () => {
   };
   
   // Add styles for approval labels
-  const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      padding: 15,
-      backgroundColor: '#f9f9f9',
-    },
-    title: {
-      fontSize: 28,
-      fontWeight: '700',
-      marginBottom: 15,
-      textAlign: 'center',
-      color: '#222',
-    },
-    searchInput: {
-      borderColor: '#bbb',
-      borderWidth: 1,
-      borderRadius: 25,
-      paddingVertical: 10,
-      paddingHorizontal: 20,
-      marginBottom: 15,
-      fontSize: 16,
-      backgroundColor: '#fff',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.1,
-      shadowRadius: 3,
-      elevation: 2,
-    },
-    newsItem: {
-      backgroundColor: '#fff',
-      borderRadius: 12,
-      padding: 12,
-      marginBottom: 8,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.12,
-      shadowRadius: 4,
-      elevation: 3,
-    },
-    source: {
-      fontWeight: '700',
-      fontSize: 16,
-      marginBottom: 6,
-      color: '#333',
-    },
-    lead: {
-      fontSize: 15,
-      marginBottom: 8,
-      color: '#444',
-    },
-    tags: {
-      fontStyle: 'italic',
-      marginBottom: 8,
-      color: '#666',
-    },
-    date: {
-      color: '#888',
-      fontSize: 13,
-    },
-    time: {
-      color: '#888',
-      fontSize: 13,
-      marginBottom: 8,
-    },
-    mediaButton: {
-      backgroundColor: '#007bff',
-      paddingVertical: 6,
-      paddingHorizontal: 12,
-      borderRadius: 20,
-      alignSelf: 'flex-start',
-      marginBottom: 10,
-    },
-    mediaButtonText: {
-      color: 'white',
-      fontWeight: '600',
-      fontSize: 14,
-    },
-    noMedia: {
-      color: '#bbb',
-      marginBottom: 10,
-      fontStyle: 'italic',
-    },
-    remarks: {
-      marginBottom: 10,
-      color: '#555',
-      fontSize: 14,
-    },
-    actions: {
-      flexDirection: 'row',
-      justifyContent: 'flex-end',
-    },
-    actionButton: {
-      marginLeft: 15,
-      paddingVertical: 6,
-      paddingHorizontal: 14,
-      borderRadius: 20,
-      backgroundColor: '#e9ecef',
-    },
-    actionText: {
-      color: '#007bff',
-      fontWeight: '600',
-      fontSize: 14,
-    },
-    emptyText: {
-      textAlign: 'center',
-      marginTop: 30,
-      color: '#aaa',
-      fontSize: 16,
-    },
-    approvedLabel: {
-      color: 'green',
-      fontWeight: '700',
-      marginBottom: 6,
-    },
-    pendingLabel: {
-      color: 'orange',
-      fontWeight: '700',
-      marginBottom: 6,
-    },
-  });
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 5,
+    backgroundColor: '#f0f2f5',
+  },
+  title: {
+    fontSize: 30,
+    fontWeight: '800',
+    marginBottom: 20,
+    textAlign: 'center',
+    color: '#1a1a1a',
+    letterSpacing: 1,
+  },
+  searchInput: {
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 30,
+    paddingVertical: 12,
+    paddingHorizontal: 25,
+    marginBottom: 20,
+    fontSize: 18,
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 5,
+    elevation: 4,
+  },
+  newsItem: {
+    backgroundColor: '#fff',
+    borderRadius: 15,
+    padding: 20,
+    marginBottom: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 6,
+  },
+  source: {
+    fontWeight: '700',
+    fontSize: 18,
+    marginBottom: 8,
+    color: '#222',
+  },
+  lead: {
+    fontSize: 16,
+    marginBottom: 10,
+    color: '#333',
+  },
+  tags: {
+    fontStyle: 'italic',
+    marginBottom: 10,
+    color: '#555',
+  },
+  date: {
+    color: '#666',
+    fontSize: 14,
+  },
+  time: {
+    color: '#666',
+    fontSize: 14,
+    marginBottom: 10,
+  },
+  mediaButton: {
+    backgroundColor: '#0056b3',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 25,
+    alignSelf: 'flex-start',
+    marginBottom: 12,
+    shadowColor: '#004494',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.4,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  mediaButtonText: {
+    color: 'white',
+    fontWeight: '700',
+    fontSize: 16,
+  },
+  noMedia: {
+    color: '#999',
+    marginBottom: 12,
+    fontStyle: 'italic',
+  },
+  remarks: {
+    marginBottom: 12,
+    color: '#444',
+    fontSize: 15,
+  },
+  actions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
+  actionButton: {
+    marginLeft: 15,
+    paddingVertical: 8,
+    paddingHorizontal: 18,
+    borderRadius: 25,
+    backgroundColor: '#e0e0e0',
+    shadowColor: '#b0b0b0',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.6,
+    shadowRadius: 2,
+    elevation: 3,
+  },
+  actionText: {
+    color: '#0056b3',
+    fontWeight: '700',
+    fontSize: 15,
+  },
+  emptyText: {
+    textAlign: 'center',
+    marginTop: 40,
+    color: '#bbb',
+    fontSize: 18,
+  },
+  approvedLabel: {
+    backgroundColor: '#d4edda',
+    color: '#155724',
+    fontWeight: '700',
+    marginBottom: 10,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+    overflow: 'hidden',
+    fontSize: 14,
+    letterSpacing: 0.5,
+  },
+  pendingLabel: {
+    backgroundColor: '#fff3cd',
+    color: '#856404',
+    fontWeight: '700',
+    marginBottom: 10,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+    overflow: 'hidden',
+    fontSize: 14,
+    letterSpacing: 0.5,
+  },
+});
 
   return (
     <ScreenWrapper>
       <View style={styles.container}>
         <Text style={styles.title}>NEWS</Text>
         {/* Removed Add Report button and modal as per user request */}
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search by source, lead, body, tags, or date/time"
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-        />
+        <View style={styles.searchContainer}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search by source, lead, body, tags, or date/time"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholderTextColor="#6b6b6b"
+          />
+        </View>
         {(loading && page === 1) || refreshing ? (
           <ActivityIndicator size="large" color="#0000ff" />
         ) : (
@@ -504,9 +536,9 @@ const News = () => {
         {/* Removed StoryScreen modal as editing is now done in AddReport screen */}
         {isMediaModalVisible && selectedMedia && (
           <MediaModal
-            visible={isMediaModalVisible}
-            onClose={closeMediaModal}
-            media={selectedMedia}
+            show={isMediaModalVisible}
+            handleClose={closeMediaModal}
+            mediaItems={selectedMedia}
           />
         )}
       </View>
@@ -527,20 +559,32 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#222',
   },
+  searchContainer: {
+    position: "absolute",
+    top: 5,
+    left: 15,
+    right: 15,
+    zIndex: 10,
+    backgroundColor: "#ffffff",
+    borderRadius: 30,
+    borderColor: "#123458",
+    borderWidth: 1.5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
+    paddingHorizontal: 10,
+  },
+  searchIcon: {
+    marginLeft: 10,
+  },
   searchInput: {
-    borderColor: '#bbb',
-    borderWidth: 1,
-    borderRadius: 25,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    marginBottom: 15,
+    flex: 1,
+    height: 45,
+    paddingHorizontal: 10,
     fontSize: 16,
-    backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
+    color: "#123458",
   },
   newsItem: {
     backgroundColor: '#fff',

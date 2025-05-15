@@ -19,6 +19,9 @@ const StoryScreen = ({ route = {}, navigation }) => {
   const [isMediaLoading, setIsMediaLoading] = useState(false);
   const videoRef = useRef(null);
 
+  // Add loading state for media loading animation
+  const [mediaLoading, setMediaLoading] = useState(false);
+
   // New state and animation value for recording animation
   const recordingAnimation = useRef(new Animated.Value(0)).current;
   const [isPlaying, setIsPlaying] = useState(false);
@@ -249,12 +252,18 @@ const StoryScreen = ({ route = {}, navigation }) => {
               shouldPlay={true}
               isMuted={false}
               isAudioOnly={mediaType === 'audio'}
-              onLoadStart={() => setIsMediaLoading(true)}
-              onLoad={() => setIsMediaLoading(false)}
+              onLoadStart={() => {
+                setIsMediaLoading(true);
+                setMediaLoading(true);
+              }}
+              onLoad={() => {
+                setIsMediaLoading(false);
+                setMediaLoading(false);
+              }}
               onPlaybackStatusUpdate={onPlaybackStatusUpdate}
             />
           )}
-          {isMediaLoading && (
+          {(isMediaLoading || mediaLoading) && (
             <View style={styles.mediaLoadingOverlay}>
               <ActivityIndicator size="large" color="#fff" />
             </View>
