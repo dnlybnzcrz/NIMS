@@ -87,26 +87,24 @@ const TagSelector = ({ tags, selectedTags, onChange, visible, toggleVisibility }
             </TouchableOpacity>
           </View>
           <ScrollView keyboardShouldPersistTaps="handled">
-            {filteredTags.map((tag) => {
-              const isSelected = selectedTags.includes(tag.name);
-              return (
-                <TouchableOpacity
-                  key={tag.name}
-                  style={styles.dropdownItem}
-                  onPress={() => {
-                    onChange(
-                      isSelected
-                        ? selectedTags.filter((t) => t !== tag.name)
-                        : [...selectedTags, tag.name]
-                    );
-                  }}
-                >
-                  <Text style={[styles.tagText, isSelected && styles.tagSelected]}>
-                    {tag.name}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
+{filteredTags.map((tag) => {
+  const isSelected = selectedTags.includes(tag.name);
+  return (
+    <TouchableOpacity
+      key={tag.name}
+      style={styles.dropdownItem}
+      onPress={() => {
+        if (!isSelected) {
+          onChange([...selectedTags, tag.name]);
+        }
+      }}
+    >
+      <Text style={[styles.tagText, isSelected && styles.tagSelected]}>
+        {tag.name}
+      </Text>
+    </TouchableOpacity>
+  );
+})}
           </ScrollView>
         </View>
       )}
@@ -200,6 +198,42 @@ const EditReport = (props) => {
 
     return unsubscribe;
   }, [props.route, props.navigation]);
+
+  useEffect(() => {
+    const fetchTags = async () => {
+      setIsLoading(prev => ({ ...prev, tags: true }));
+      try {
+        const user = JSON.parse(await AsyncStorage.getItem("user"));
+        if (!user || !user.token) {
+          Alert.alert("Authentication Error", "Please log in again.");
+          return;
+        }
+        const config = {
+          headers: { Authorization: "Bearer " + user.token },
+        };
+        const response = await axios.get(
+          "https://api.radiopilipinas.online/nims/tags/view",
+          config
+        );
+        setTags(response.data.tagsList || []);
+      } catch (error) {
+        if (error.response && error.response.status === 401) {
+          Alert.alert("Session Expired", "Please log in again to continue.");
+          AsyncStorage.removeItem("user");
+        } else {
+          Alert.alert(
+            "Error Loading Tags",
+            "Unable to load tags. Please check your connection and try again."
+          );
+        }
+        console.error("Error fetching tags:", error);
+      } finally {
+        setIsLoading(prev => ({ ...prev, tags: false }));
+      }
+    };
+
+    fetchTags();
+  }, []);
 
   const updateFormField = useCallback((field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));

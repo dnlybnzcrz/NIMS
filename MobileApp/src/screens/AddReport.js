@@ -734,23 +734,25 @@ const AddReport = (props) => {
 
     // Start upload process
     try {
-      setIsLoading(prev => ({...prev, upload: true}));
+      setIsLoading(prev => ({ ...prev, upload: true }));
       toggleUiState("uploadProgress", 0);
-      
+
       const user = JSON.parse(await AsyncStorage.getItem("user"));
       if (!user || !user.token) {
         Alert.alert("Authentication Error", "Please log in again.");
         // Redirect to login
         return;
       }
-      
+
       const config = {
         headers: {
           "Content-Type": "multipart/form-data",
           Authorization: "Bearer " + user.token,
         },
         onUploadProgress: (progressEvent) => {
-          const progress = Math.round((progressEvent.loaded / progressEvent.total) * 100);
+          const progress = Math.round(
+            (progressEvent.loaded / progressEvent.total) * 100
+          );
           toggleUiState("uploadProgress", progress);
         },
       };
@@ -765,74 +767,83 @@ const AddReport = (props) => {
       fd.append("remarks", formData.remarks.trim());
 
       // Add all media files
-      allMedia.forEach((file, index) => {
-        // Append file object directly if it has name and uri, similar to website
+      for (let index = 0; index < allMedia.length; index++) {
+        const file = allMedia[index];
         if (file.name && file.uri) {
-          // Ensure uri has file:// prefix for local files (especially audio)
           let fileUri = file.uri;
           if (Platform.OS !== "web" && !fileUri.startsWith("file://")) {
             fileUri = "file://" + fileUri;
           }
-          // Fix mime type for .m4a files on iOS
           let mimeType = file.mimeType || "application/octet-stream";
           if (fileUri.toLowerCase().endsWith(".m4a")) {
             mimeType = "audio/mp4"; // or "audio/x-m4a"
           }
+          // Log file info for debugging
+          console.log(`Appending file: ${file.name}, uri: ${fileUri}, type: ${mimeType}`);
           fd.append("media", {
             uri: fileUri,
             type: mimeType,
             name: file.name,
           });
         } else {
-          // Fallback to previous logic
           let mimeType = file.mimeType;
           let fileName = file.name;
           if (!mimeType) {
             if (file.uri.endsWith(".mp4")) mimeType = "video/mp4";
             else if (file.uri.endsWith(".mov")) mimeType = "video/quicktime";
-            else if (file.uri.endsWith(".mp3") || file.uri.endsWith(".wav") || file.uri.endsWith(".ogg") || file.uri.endsWith(".m4a") || file.uri.endsWith(".aac")) mimeType = "audio/mpeg";
+            else if (
+              file.uri.endsWith(".mp3") ||
+              file.uri.endsWith(".wav") ||
+              file.uri.endsWith(".ogg") ||
+              file.uri.endsWith(".m4a") ||
+              file.uri.endsWith(".aac")
+            )
+              mimeType = "audio/mpeg";
             else mimeType = "*/*";
           }
           if (!fileName) {
             const uriParts = file.uri.split("/");
             fileName = uriParts[uriParts.length - 1] || `file${index}`;
           }
-          // Ensure uri has file:// prefix for local files (especially videos and audio)
           let fileUri = file.uri;
           if (Platform.OS !== "web" && !fileUri.startsWith("file://")) {
             fileUri = "file://" + fileUri;
           }
+          // Log file info for debugging
+          console.log(`Appending file: ${fileName}, uri: ${fileUri}, type: ${mimeType}`);
           fd.append("media", {
             uri: fileUri,
             type: mimeType,
             name: fileName,
           });
         }
-      });
+      }
 
       const res = await axios.post(
         "https://api.radiopilipinas.online/nims/add",
         fd,
         config
       );
-      
-      toggleUiState("uploadProgress", 100);
-      // Wait a short time to show 100% progress before success modal
-      setTimeout(() => {
-        toggleUiState("uploadSuccess", true);
-        toggleUiState("uploadProgress", 0);
-      }, 500);
+
+          toggleUiState("uploadProgress", 100);
+          // Wait a short time to show 100% progress before success modal
+          setTimeout(() => {
+            toggleUiState("uploadSuccess", true);
+            // Do not reset uploadProgress here to keep modal visible until success modal shows
+            // toggleUiState("uploadProgress", 0);
+          }, 500);
       props.updateReports?.(res.data);
-      
+
       // Clear draft after successful upload
-      AsyncStorage.removeItem('draft-report');
+      AsyncStorage.removeItem("draft-report");
     } catch (err) {
       // 1. Improve Error Handling
       if (err.response) {
         // Server responded with an error status code
-        const errorMessage = err.response.data?.message || "Server returned an error.";
+        const errorMessage =
+          err.response.data?.message || "Server returned an error.";
         Alert.alert("Upload Failed", `Error: ${errorMessage}`);
-        
+
         // Handle token expiration
         if (err.response.status === 401) {
           Alert.alert("Session Expired", "Please log in again.");
@@ -841,14 +852,17 @@ const AddReport = (props) => {
         }
       } else if (err.request) {
         // Request was made but no response received
-        Alert.alert("Network Error", "Cannot connect to server. Check your internet connection.");
+        Alert.alert(
+          "Network Error",
+          "Cannot connect to server. Check your internet connection."
+        );
       } else {
         // Error in request setup
         Alert.alert("Upload Failed", "An unexpected error occurred.");
       }
       console.error("Upload error:", err);
     } finally {
-      setIsLoading(prev => ({...prev, upload: false}));
+      setIsLoading((prev) => ({ ...prev, upload: false }));
     }
   };
 
@@ -868,6 +882,13 @@ const AddReport = (props) => {
         images: [],
         videos: []
       });
+    }
+  }, [uiState.uploadSuccess]);
+
+  // Hide upload progress modal when uploadSuccess is true
+  useEffect(() => {
+    if (uiState.uploadSuccess) {
+      toggleUiState("uploadProgress", 0);
     }
   }, [uiState.uploadSuccess]);
 

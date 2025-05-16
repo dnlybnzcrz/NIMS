@@ -7,7 +7,10 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const auth = localStorage.getItem("userDetails");
+    let auth = localStorage.getItem("userDetails");
+    if (!auth) {
+      auth = sessionStorage.getItem("userDetails");
+    }
     if (auth) {
       setUser(JSON.parse(auth));
     }
@@ -15,9 +18,10 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const logout = () => {
-    // Clear only relevant authentication data
+    // Clear all relevant authentication data
     localStorage.removeItem("userDetails");
-    // You can add other keys to clear if needed
+    localStorage.removeItem("user");
+    sessionStorage.removeItem("user");
     setUser(null);
   };
 

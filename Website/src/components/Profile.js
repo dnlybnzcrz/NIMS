@@ -10,9 +10,10 @@ const Profile = () => {
   const [error, setError] = useState(null);
   const [showChangePass, setShowChangePass] = useState(false); // State for showing change password modal
 
+  const user = JSON.parse(localStorage.getItem("user")) || JSON.parse(sessionStorage.getItem("user"));
   const config = {
     headers: {
-      Authorization: "Bearer " + JSON.parse(localStorage.getItem("user")).token,
+      Authorization: "Bearer " + (user ? user.token : ""),
     },
   };
 

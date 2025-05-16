@@ -35,6 +35,11 @@ const Approval = () => {
 
     useEffect(() => {
         fetchNewsList();
+        const intervalId = setInterval(() => {
+            fetchNewsList();
+        }, 120000); // 2 minutes in milliseconds
+
+        return () => clearInterval(intervalId);
     }, []);
 
     const handleDelete = async (event, id) => {
@@ -123,17 +128,25 @@ const Approval = () => {
             </div>
             <Navbar />
             <br />
-            <div className="container my-2 border p-4 rounded-lg shadow-lg">
+            <div className="container my-2 border p-4 rounded-lg shadow-lg" style={{ maxWidth: '80%', margin: '0 auto' }}>
     <div className="card-body ">
-        <h3 className="text-xl font-semibold text-gray-700">APPROVAL</h3>
+        <div className="d-flex justify-content-between align-items-center mb-2">
+            <h3 className="text-xl font-semibold text-gray-700">APPROVAL</h3>
+            <Button variant="primary" onClick={fetchNewsList}>
+                Refresh
+            </Button>
+        </div>
         <hr className="my-4" />
-        <input
-            type="text"
-            className="form-control shadow-sm focus:ring-blue-500 focus:border-blue-500"
-            placeholder="Search by source, headline, lead, tags, or date/time"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-        />
+        <div className="d-flex justify-content-between align-items-center">
+            <input
+                type="text"
+                className="form-control shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Search by source, headline, lead, tags, or date/time"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{ flexGrow: 1, marginRight: '10px' }}
+            />
+        </div>
         <br />
 
         <div className="overflow-x-auto mt-6">

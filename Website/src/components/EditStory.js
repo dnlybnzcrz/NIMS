@@ -28,9 +28,10 @@ const EditStory = (props) => {
   useEffect(() => {
     // Fetch tags once on component mount
     const fetchTags = async () => {
+      const user = JSON.parse(localStorage.getItem("user")) || JSON.parse(sessionStorage.getItem("user"));
       const config = {
         headers: {
-          Authorization: "Bearer " + JSON.parse(localStorage.getItem("user")).token,
+          Authorization: "Bearer " + (user ? user.token : ""),
         },
       };
       try {
@@ -66,9 +67,10 @@ const EditStory = (props) => {
   const formSubmitHandler = async (event) => {
     event.preventDefault();
 
+    const user = JSON.parse(localStorage.getItem("user")) || JSON.parse(sessionStorage.getItem("user"));
     const config = {
       headers: {
-        Authorization: "Bearer " + JSON.parse(localStorage.getItem("user")).token,
+        Authorization: "Bearer " + (user ? user.token : ""),
         "Content-Type": "multipart/form-data",
       },
     };
