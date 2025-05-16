@@ -20,6 +20,7 @@ const News = () => {
     const [showEditModal, setShowEditModal] = useState(false);
     const [selectedNewsItem, setSelectedNewsItem] = useState(null);
     const [currentPage, setCurrentPage] = useState(0);
+    // const [currentTime, setCurrentTime] = useState(Date.now()); // Remove currentTime state for real-time updates
     const itemsPerPage = 20; // Set items per page
 
     const userData = JSON.parse(localStorage.getItem("user")) || JSON.parse(sessionStorage.getItem("user"));
@@ -31,6 +32,10 @@ const News = () => {
 
     useEffect(() => {
         fetchNews();
+        // const interval = setInterval(() => {
+        //     setCurrentTime(Date.now()); // Update currentTime every minute
+        // }, 60000);
+        // return () => clearInterval(interval);
     }, []);
 
     const fetchNews = async () => {
@@ -188,9 +193,20 @@ const News = () => {
                                                 : 'No tags selected'}
                                         </td>
                                         <td className="px-4 py-2 text-sm truncate">
-                                            {moment(value.dateCreated).format("MM/DD/YYYY")}
-                                            <br />
-                                            {moment(value.dateCreated).format("h:mm:ss a")}
+                                            {value.forDate
+                                                ? moment(value.forDate).isValid()
+                                                    ? moment(value.forDate).format("MM/DD/YYYY, h:mm:ss a")
+                                                    : moment(new Date(value.forDate)).isValid()
+                                                        ? moment(new Date(value.forDate)).format("MM/DD/YYYY, h:mm:ss a")
+                                                        : "N/A"
+                                                : value.dateCreated
+                                                    ? moment(value.dateCreated).isValid()
+                                                        ? moment(value.dateCreated).format("MM/DD/YYYY, h:mm:ss a")
+                                                        : moment(new Date(value.dateCreated)).isValid()
+                                                            ? moment(new Date(value.dateCreated)).format("MM/DD/YYYY, h:mm:ss a")
+                                                            : "N/A"
+                                                    : "N/A"
+                                            }
                                         </td>
                                         <td className="px-4 py-2 text-sm truncate">
                                             {value.files &&

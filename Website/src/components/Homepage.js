@@ -86,23 +86,31 @@ const Homepage = () => {
   };
 
   // Filter reports based on search query
-  const filterReports = () => {
-    return approvedReports.filter((report) => {
-      const { author, lead, tags, dateCreated } = report;
-      const formattedDate = moment(dateCreated).format("MM/DD/YYYY, h:mm:ss a");
-      const tagsToSearch = Array.isArray(tags) ? tags.join(', ') : ''; // Join tags into a string if it's an array
+      const filterReports = () => {
+        return approvedReports.filter((report) => {
+          const { author, lead, tags, dateCreated, forDate } = report;
+          const dateToFormat = forDate ? forDate : dateCreated;
+          let formattedDate = "N/A";
+          if (dateToFormat) {
+            if (moment(dateToFormat).isValid()) {
+              formattedDate = moment(dateToFormat).format("MM/DD/YYYY, h:mm:ss a");
+            } else if (moment(new Date(dateToFormat)).isValid()) {
+              formattedDate = moment(new Date(dateToFormat)).format("MM/DD/YYYY, h:mm:ss a");
+            }
+          }
+          const tagsToSearch = Array.isArray(tags) ? tags.join(', ') : ''; // Join tags into a string if it's an array
 
-      return (
-        (author.station && author.station.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (author.name.first && author.name.first.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (author.name.middle && author.name.middle.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (author.name.last && author.name.last.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (lead && lead.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (tagsToSearch.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (formattedDate && formattedDate.toLowerCase().includes(searchQuery.toLowerCase()))
-      );
-    });
-  };
+          return (
+            (author.station && author.station.toLowerCase().includes(searchQuery.toLowerCase())) ||
+            (author.name.first && author.name.first.toLowerCase().includes(searchQuery.toLowerCase())) ||
+            (author.name.middle && author.name.middle.toLowerCase().includes(searchQuery.toLowerCase())) ||
+            (author.name.last && author.name.last.toLowerCase().includes(searchQuery.toLowerCase())) ||
+            (lead && lead.toLowerCase().includes(searchQuery.toLowerCase())) ||
+            (tagsToSearch.toLowerCase().includes(searchQuery.toLowerCase())) ||
+            (formattedDate && formattedDate.toLowerCase().includes(searchQuery.toLowerCase()))
+          );
+        });
+      };
 
   // Calculate paginated reports for current page
   const paginatedReports = filterReports().slice(

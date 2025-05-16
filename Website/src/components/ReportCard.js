@@ -98,7 +98,20 @@ const ReportCard = ({ report, handleShowModal, handleDeleteReport, handleShowMed
             {highlightText(report.author.station, searchQuery)}
           </div>
           <div className="date-created">
-            {moment(report.dateCreated).fromNow()}
+            {report.forDate
+              ? moment(report.forDate).isValid()
+                ? moment(report.forDate).format("MM/DD/YYYY, h:mm:ss a")
+                : moment(new Date(report.forDate)).isValid()
+                  ? moment(new Date(report.forDate)).format("MM/DD/YYYY, h:mm:ss a")
+                  : "N/A"
+              : report.dateCreated
+                ? moment(report.dateCreated).isValid()
+                  ? moment(report.dateCreated).format("MM/DD/YYYY, h:mm:ss a")
+                  : moment(new Date(report.dateCreated)).isValid()
+                    ? moment(new Date(report.dateCreated)).format("MM/DD/YYYY, h:mm:ss a")
+                    : "N/A"
+                : "N/A"
+            }
           </div>
         </div>
       </div>
